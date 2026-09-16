@@ -1,7 +1,8 @@
-from flask import Blueprint, current_app, jsonify
+from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from ..errors import ApiError
-from ..models import Alumno, Curso, Matricula, MatriculaDetalle, PeriodoAcademico, Seccion
+from ..extensions import db
+from ..models import Alumno, Curso, Matricula, MatriculaDetalle, PeriodoAcademico, Plan, Seccion
 
 bp = Blueprint("alumnos", __name__)
 
@@ -55,3 +56,18 @@ def historial(cod_alumno):
         "nota_final": float(detail.nota_final) if detail.nota_final is not None else None,
         "curso": detail.seccion.curso.to_dict()
     } for detail in details])
+
+
+@bp.patch("/alumnos/<cod_alumno>/plan")
+@jwt_required()
+def update_plan(cod_alumno):
+    require_owner(cod_alumno)
+    alumno = Alumno.query.get_or_404(cod_alumno)
+    data = request.get_json(silent=True) or {}
+    id_plan = data.get("id_plan")
+    if not id_plan or not isinstance(id_plan, int):
+        raise ApiError("datos_invalidos", "Se requiere el id_plan numérico.", 400)
+    plan = Plan.query.get_or_404(id_plan)
+    alumno.id_plan = plan.id_plan
+    db.session.commit()
+    return jsonify(alumno=alumno.to_dict())
