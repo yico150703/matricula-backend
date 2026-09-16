@@ -1,5 +1,7 @@
+from datetime import date
 from flask import Blueprint, current_app, jsonify, request
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
+from werkzeug.security import generate_password_hash
 from ..errors import ApiError
 from ..extensions import db
 from ..models import (
@@ -15,6 +17,54 @@ from ..models import (
 )
 
 bp = Blueprint("alumnos", __name__)
+
+
+@bp.get("/alumnos")
+def list_alumnos():
+    alumnos = Alumno.query.order_by(Alumno.cod_alumno.asc()).all()
+    return jsonify(alumnos=[a.to_dict() for a in alumnos])
+
+
+@bp.post("/alumnos")
+def create_alumno():
+    data = request.get_json(silent=True) or {}
+    cod_alumno = str(data.get("cod_alumno") or "").strip()
+    nombres = str(data.get("nombres") or "").strip()
+    apellidos = str(data.get("apellidos") or "").strip()
+    email = str(data.get("email") or "").strip().lower()
+    password = str(data.get("password") or "").strip()
+    id_plan = data.get("id_plan", 1)
+
+    if not cod_alumno or not nombres or not apellidos or not email or not password:
+        raise ApiError("datos_invalidos", "Código, nombres, apellidos, correo y contraseña son obligatorios.", 400)
+
+    if Alumno.query.filter_by(cod_alumno=cod_alumno).first():
+        raise ApiError("alumno_duplicado", f"El código de alumno {cod_alumno} ya está registrado.", 409)
+
+    if Alumno.query.filter_by(email=email).first():
+        raise ApiError("email_duplicado", f"El correo institucional {email} ya se encuentra registrado.", 409)
+
+    plan = PlanEstudio.query.filter_by(cod_fac=1, cod_esc=1, corr_pe=id_plan).first()
+    if not plan:
+        id_plan = 1
+
+    nuevo_alumno = Alumno(
+        cod_alumno=cod_alumno,
+        nombres=nombres,
+        apellidos=apellidos,
+        email=email,
+        password_hash=generate_password_hash(password),
+        cod_fac=1,
+        cod_esc=1,
+        corr_pe=id_plan,
+        estado="activo",
+        fecha_ingreso=date.today(),
+    )
+    db.session.add(nuevo_alumno)
+    db.session.commit()
+
+    token = create_access_token(identity=nuevo_alumno.cod_alumno)
+    return jsonify(alumno=nuevo_alumno.to_dict(), access_token=token), 201
 
 
 def require_owner(cod_alumno):
