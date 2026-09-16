@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from .extensions import cors, db, jwt, migrate
 from .errors import register_error_handlers
 
@@ -9,8 +9,36 @@ def create_app(config_object="config.Config"):
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
-    origins = [origin.strip() for origin in app.config["FRONTEND_ORIGIN"].split(",") if origin.strip()]
-    cors.init_app(app, resources={r"/api/*": {"origins": origins}}, supports_credentials=False)
+
+    raw_origin = app.config.get("FRONTEND_ORIGIN", "*")
+    cors_origins = "*" if (not raw_origin or raw_origin.strip() == "*") else [o.strip() for o in raw_origin.split(",") if o.strip()]
+
+    cors.init_app(
+        app,
+        resources={r"/*": {"origins": cors_origins}},
+        supports_credentials=False,
+        allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    )
+
+    @app.before_request
+    def handle_preflight():
+        if request.method == "OPTIONS":
+            response = app.make_default_options_response()
+            origin = request.headers.get("Origin")
+            response.headers["Access-Control-Allow-Origin"] = origin if origin else "*"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+            return response
+
+    @app.after_request
+    def set_cors_headers(response):
+        origin = request.headers.get("Origin")
+        response.headers["Access-Control-Allow-Origin"] = origin if origin else "*"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        return response
+
     register_error_handlers(app)
 
     @jwt.unauthorized_loader

@@ -3,8 +3,7 @@ services:
     name: matricula-backend
     runtime: python
     buildCommand: pip install -r requirements.txt
-    preDeployCommand: flask --app wsgi:app db upgrade && python scripts/seed_curricula.py && python scripts/seed_periodo_secciones.py
-    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT
+    startCommand: python scripts/seed_database_completa.py && gunicorn wsgi:app --bind 0.0.0.0:$PORT
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
@@ -16,7 +15,7 @@ services:
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: FRONTEND_ORIGIN
-        sync: false
+        value: "*"
       - key: PASSING_GRADE
         value: "11"
 databases:

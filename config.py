@@ -19,5 +19,5 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-development-key")
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=8)
-    FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
+    FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "*")
     PASSING_GRADE = float(os.getenv("PASSING_GRADE", "11"))
