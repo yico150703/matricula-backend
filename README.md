@@ -52,8 +52,9 @@ Las respuestas de error tienen la forma `{"error":"...","detail":"..."}`. Los ca
 | `POST /api/matriculas` | Crea/agrega detalles de matrícula. Cuerpo: `cod_alumno`, `id_periodo`, `secciones` (arreglo de IDs). |
 | `GET /api/matriculas/:codigo?periodo=:id` | Matrícula del período. |
 | `DELETE /api/matriculas/:nro/detalle/:id_seccion` | Retira una sección activa e incrementa su cupo. |
+| `PATCH /api/matriculas/:nro/detalle/:id_seccion/nota` | Registra o corrige `nota_final` (0 a 20); desde 11 el curso queda aprobado y puede satisfacer prerrequisitos. |
 
-`POST /api/matriculas` bloquea concurrentemente las secciones y valida plan, todos los prerrequisitos aprobados en períodos cerrados, cupo, cruces de horarios —incluso con secciones ya matriculadas— y duplicidad de curso en el período. Los conflictos devuelven `409`.
+`POST /api/matriculas` bloquea concurrentemente las secciones y valida plan, todos los prerrequisitos con nota aprobatoria (11 o más por defecto), cupo, cruces de horarios —incluso con secciones ya matriculadas— y duplicidad de curso en el período. Una nota de 10 o menos deja el curso desaprobado y mantiene bloqueados sus cursos dependientes. Los conflictos devuelven `409`.
 
 ## Render + PostgreSQL
 

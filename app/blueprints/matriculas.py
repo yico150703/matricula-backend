@@ -23,19 +23,24 @@ def _assert_owner(cod_alumno):
 
 
 def _approved_course_ids(cod_alumno):
+    """Courses that can satisfy a prerequisite for an enrollment.
+
+    A recorded passing grade is the academic outcome that matters here.  The
+    previous implementation also required the source period to be marked as
+    closed, which left a student blocked even after the final grade had been
+    entered for that course.
+    """
     grade = current_app.config["PASSING_GRADE"]
     rows = (
         db.session.query(HorarioCab.corr_pe, HorarioDCSeccion.cod_curso)
         .select_from(MatriculaDetalle)
         .join(Matricula, Matricula.nro_matricula == MatriculaDetalle.nro_matricula)
-        .join(PeriodoAcademico, PeriodoAcademico.unique_id == Matricula.id_periodo)
         .join(HorarioDCSeccion, HorarioDCSeccion.id_seccion == MatriculaDetalle.id_seccion)
         .join(HorarioCab, HorarioDCSeccion.id_horario == HorarioCab.id_horario)
         .filter(
             Matricula.cod_alumno == cod_alumno,
             Matricula.estado == "confirmada",
             MatriculaDetalle.estado == "matriculado",
-            PeriodoAcademico.estado == "cerrado",
             MatriculaDetalle.nota_final >= grade,
         )
         .all()
@@ -52,13 +57,18 @@ def _conflicts(first, second):
 
 
 def _serialize_enrollment(matricula):
+    passing_grade = current_app.config["PASSING_GRADE"]
     detalles_list = []
     for detail in matricula.detalles:
         sec = detail.seccion
         curso_dict = sec.curso.to_dict() if (sec and sec.curso) else None
+        academic_status = detail.estado
+        if detail.estado == "matriculado" and detail.nota_final is not None:
+            academic_status = "aprobado" if float(detail.nota_final) >= passing_grade else "desaprobado"
         detalles_list.append({
             "id": detail.id,
             "estado": detail.estado,
+            "estado_academico": academic_status,
             "nota_final": float(detail.nota_final) if detail.nota_final is not None else None,
             "seccion": sec.to_dict(curso_dict=curso_dict) if sec else None,
         })
@@ -117,6 +127,10 @@ def create_enrollment():
 
         approved = _approved_course_ids(cod_alumno)
         for section in locked_sections:
+            course_id = alumno.corr_pe * 1000 + section.cod_curso
+            if course_id in approved:
+                nombre = section.curso.den_curso if section.curso else "la asignatura"
+                raise ApiError("curso_ya_aprobado", f"El curso {nombre} ya fue aprobado y no requiere una nueva matrícula.", 409)
             prereqs = MezclaCurso.query.filter_by(
                 cod_fac=alumno.cod_fac,
                 cod_esc=alumno.cod_esc,
@@ -188,8 +202,50 @@ def withdraw_course(nro_matricula, id_seccion):
     )
     if not detail:
         raise ApiError("detalle_no_encontrado", "No existe una matrícula activa para esa sección.", 404)
+    if detail.nota_final is not None:
+        raise ApiError("retiro_no_disponible", "No puede retirar un curso que ya tiene una nota registrada.", 409)
     section = HorarioDCSeccion.query.filter_by(id_seccion=id_seccion).with_for_update().one()
     detail.estado = "retirado"
     section.cupo_disponible += 1
     db.session.commit()
     return jsonify(message="Curso retirado correctamente.", matricula=_serialize_enrollment(matricula))
+
+
+@bp.patch("/matriculas/<int:nro_matricula>/detalle/<int:id_seccion>/nota")
+@jwt_required()
+def record_grade(nro_matricula, id_seccion):
+    """Register or correct a final grade and expose its academic outcome."""
+    matricula = Matricula.query.get_or_404(nro_matricula)
+    _assert_owner(matricula.cod_alumno)
+    data = request.get_json(silent=True) or {}
+    nota_final = data.get("nota_final")
+    if isinstance(nota_final, bool) or not isinstance(nota_final, (int, float)):
+        raise ApiError("nota_invalida", "La nota final debe ser un número entre 0 y 20.", 400)
+    if not 0 <= nota_final <= 20:
+        raise ApiError("nota_fuera_de_rango", "La nota final debe estar entre 0 y 20.", 400)
+
+    detail = (
+        MatriculaDetalle.query.filter_by(
+            nro_matricula=nro_matricula,
+            id_seccion=id_seccion,
+            estado="matriculado",
+        )
+        .with_for_update()
+        .first()
+    )
+    if not detail:
+        raise ApiError("detalle_no_encontrado", "No existe una matrícula activa para esa sección.", 404)
+
+    detail.nota_final = round(nota_final, 2)
+    db.session.commit()
+    academic_status = "aprobado" if detail.nota_final >= current_app.config["PASSING_GRADE"] else "desaprobado"
+    return jsonify(
+        detalle={
+            "id": detail.id,
+            "nro_matricula": detail.nro_matricula,
+            "id_seccion": detail.id_seccion,
+            "nota_final": float(detail.nota_final),
+            "estado_academico": academic_status,
+        },
+        nota_minima=current_app.config["PASSING_GRADE"],
+    )
