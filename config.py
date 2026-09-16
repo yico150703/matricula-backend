@@ -1,5 +1,8 @@
 import os
 from datetime import timedelta
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def database_url():
     url = os.getenv("DATABASE_URL", "sqlite:///matricula.db")
