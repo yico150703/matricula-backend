@@ -1,19 +1,21 @@
 from flask import Blueprint, jsonify, request
-from ..models import Curso, Plan
+from ..models import Curso, PlanEstudio
 
 bp = Blueprint("planes", __name__)
 
 
 @bp.get("/planes")
 def list_planes():
-    return jsonify(planes=[plan.to_dict() for plan in Plan.query.order_by(Plan.id_plan).all()])
+    planes = PlanEstudio.query.filter_by(cod_fac=1, cod_esc=1).order_by(PlanEstudio.corr_pe).all()
+    return jsonify(planes=[plan.to_dict() for plan in planes])
 
 
 @bp.get("/planes/<int:id_plan>/cursos")
 def list_cursos_plan(id_plan):
-    Plan.query.get_or_404(id_plan)
-    query = Curso.query.filter_by(id_plan=id_plan)
+    PlanEstudio.query.filter_by(cod_fac=1, cod_esc=1, corr_pe=id_plan).first_or_404()
+    query = Curso.query.filter_by(cod_fac=1, cod_esc=1, corr_pe=id_plan)
     ciclo = request.args.get("ciclo", type=int)
     if ciclo:
-        query = query.join(Curso.ciclo).filter_by(numero_ciclo=ciclo)
-    return jsonify(cursos=[curso.to_dict() for curso in query.order_by(Curso.id_ciclo, Curso.codigo_curso).all()])
+        query = query.filter_by(semestre=ciclo)
+    cursos = query.order_by(Curso.semestre, Curso.cod_curso).all()
+    return jsonify(cursos=[curso.to_dict() for curso in cursos])

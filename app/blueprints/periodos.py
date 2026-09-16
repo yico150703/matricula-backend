@@ -6,4 +6,5 @@ bp = Blueprint("periodos", __name__)
 
 @bp.get("/periodos")
 def list_periodos():
-    return jsonify(periodos=[periodo.to_dict() for periodo in PeriodoAcademico.query.order_by(PeriodoAcademico.fecha_inicio.desc()).all()])
+    periodos = PeriodoAcademico.query.order_by(PeriodoAcademico.fec_inicio.asc()).all()
+    return jsonify(periodos=[periodo.to_dict() for periodo in periodos])
