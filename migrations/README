@@ -1,0 +1,1 @@
+Migrations are managed by Flask-Migrate/Alembic. Do not replace them with `db.create_all()`.
