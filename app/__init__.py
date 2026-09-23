@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask
 from .extensions import cors, db, jwt, migrate
 from .errors import register_error_handlers
 
@@ -13,6 +13,7 @@ def create_app(config_object="config.Config"):
     raw_origin = app.config.get("FRONTEND_ORIGIN", "*")
     cors_origins = "*" if (not raw_origin or raw_origin.strip() == "*") else [o.strip() for o in raw_origin.split(",") if o.strip()]
 
+    # Los tokens viajan en la cabecera Authorization (sin cookies), por eso no se usan credenciales.
     cors.init_app(
         app,
         resources={r"/*": {"origins": cors_origins}},
@@ -20,24 +21,6 @@ def create_app(config_object="config.Config"):
         allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept"],
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     )
-
-    @app.before_request
-    def handle_preflight():
-        if request.method == "OPTIONS":
-            response = app.make_default_options_response()
-            origin = request.headers.get("Origin")
-            response.headers["Access-Control-Allow-Origin"] = origin if origin else "*"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept"
-            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-            return response
-
-    @app.after_request
-    def set_cors_headers(response):
-        origin = request.headers.get("Origin")
-        response.headers["Access-Control-Allow-Origin"] = origin if origin else "*"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-        return response
 
     register_error_handlers(app)
 
@@ -60,10 +43,16 @@ def create_app(config_object="config.Config"):
     from .blueprints.periodos import bp as periodos_bp
     from .blueprints.secciones import bp as secciones_bp
     from .blueprints.matriculas import bp as matriculas_bp
-    for blueprint in (auth_bp, planes_bp, cursos_bp, alumnos_bp, periodos_bp, secciones_bp, matriculas_bp):
+    from .blueprints.admin import bp as admin_bp
+    for blueprint in (auth_bp, planes_bp, cursos_bp, alumnos_bp, periodos_bp, secciones_bp, matriculas_bp, admin_bp):
         app.register_blueprint(blueprint, url_prefix="/api")
 
     @app.get("/health")
     def health():
-        return {"status": "ok"}
+        try:
+            db.session.execute(db.text("SELECT 1"))
+            return {"status": "ok", "database": "ok"}
+        except Exception:  # pragma: no cover - depende de la infraestructura
+            db.session.rollback()
+            return {"status": "degraded", "database": "error"}, 503
     return app

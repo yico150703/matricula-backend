@@ -21,3 +21,6 @@ class Config:
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=8)
     FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "*")
     PASSING_GRADE = float(os.getenv("PASSING_GRADE", "11"))
+    MAX_CREDITS = float(os.getenv("MAX_CREDITS", "26"))
+    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_recycle": 280}
+    JSON_SORT_KEYS = False

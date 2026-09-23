@@ -1,4 +1,7 @@
-from flask import jsonify
+from flask import current_app, jsonify
+from werkzeug.exceptions import HTTPException
+
+from .extensions import db
 
 
 class ApiError(Exception):
@@ -24,3 +27,13 @@ def register_error_handlers(app):
     @app.errorhandler(422)
     def invalid_token(_):
         return jsonify(error="token_invalido", detail="El token de autenticación no es válido."), 401
+
+    @app.errorhandler(HTTPException)
+    def http_error(error):
+        return jsonify(error="error_http", detail=error.description), error.code
+
+    @app.errorhandler(Exception)
+    def unexpected_error(error):
+        db.session.rollback()
+        current_app.logger.exception("Error no controlado: %s", error)
+        return jsonify(error="error_interno", detail="Ocurrió un error interno. Intente nuevamente."), 500

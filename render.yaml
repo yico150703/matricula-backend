@@ -3,7 +3,7 @@ services:
     name: matricula-backend
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python scripts/seed_database_completa.py && gunicorn wsgi:app --bind 0.0.0.0:$PORT
+    startCommand: python scripts/seed_database_completa.py && gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
@@ -18,6 +18,12 @@ services:
         value: "*"
       - key: PASSING_GRADE
         value: "11"
+      - key: MAX_CREDITS
+        value: "26"
+      - key: ADMIN_USER
+        value: admin
+      - key: ADMIN_PASSWORD
+        sync: false
 databases:
   - name: matricula-postgres
     plan: free

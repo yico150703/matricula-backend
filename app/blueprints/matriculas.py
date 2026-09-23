@@ -1,5 +1,5 @@
 from flask import Blueprint, current_app, jsonify, request
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import jwt_required
 from sqlalchemy import select
 from ..errors import ApiError
 from ..extensions import db
@@ -13,13 +13,13 @@ from ..models import (
     MezclaCurso,
     PeriodoAcademico,
 )
+from ..security import admin_required, require_self_or_admin
 
 bp = Blueprint("matriculas", __name__)
 
 
 def _assert_owner(cod_alumno):
-    if get_jwt_identity() != cod_alumno:
-        raise ApiError("acceso_denegado", "Solo puede operar sobre su propia matrícula.", 403)
+    require_self_or_admin(cod_alumno, "Solo puede operar sobre su propia matrícula.")
 
 
 def _approved_course_ids(cod_alumno):
@@ -93,7 +93,7 @@ def create_enrollment():
     if len(raw_ids) != len(set(raw_ids)) or not all(isinstance(item, int) for item in raw_ids):
         raise ApiError("secciones_invalidas", "Las secciones deben ser identificadores enteros no repetidos.", 400)
 
-    alumno = Alumno.query.get_or_404(cod_alumno)
+    alumno = db.get_or_404(Alumno, cod_alumno)
     if alumno.estado != "activo":
         raise ApiError("alumno_no_activo", "El alumno no está habilitado para matricularse.", 403)
 
@@ -157,6 +157,16 @@ def create_enrollment():
                 nombre = section.curso.den_curso if section.curso else "la asignatura"
                 raise ApiError("cruce_horario", f"{nombre} se cruza con una sección ya matriculada.", 409)
 
+        max_credits = current_app.config["MAX_CREDITS"]
+        current_credits = sum(float(d.seccion.curso.cred) for d in existing if d.seccion and d.seccion.curso)
+        new_credits = sum(float(s.curso.cred) for s in locked_sections if s.curso)
+        if current_credits + new_credits > max_credits:
+            raise ApiError(
+                "tope_creditos",
+                f"Se supera el tope de {max_credits:g} créditos (ya tiene {current_credits:g} y agrega {new_credits:g}).",
+                409,
+            )
+
         if not matricula:
             matricula = Matricula(cod_alumno=cod_alumno, id_periodo=id_periodo, estado="confirmada", monto_pagado=0)
             db.session.add(matricula)
@@ -191,7 +201,7 @@ def current_enrollment(cod_alumno):
 @bp.delete("/matriculas/<int:nro_matricula>/detalle/<int:id_seccion>")
 @jwt_required()
 def withdraw_course(nro_matricula, id_seccion):
-    matricula = Matricula.query.get_or_404(nro_matricula)
+    matricula = db.get_or_404(Matricula, nro_matricula)
     _assert_owner(matricula.cod_alumno)
     if matricula.periodo.estado != "en_curso" or matricula.estado != "confirmada":
         raise ApiError("retiro_no_disponible", "Solo puede retirar cursos de una matrícula confirmada en período en curso.", 409)
@@ -212,11 +222,10 @@ def withdraw_course(nro_matricula, id_seccion):
 
 
 @bp.patch("/matriculas/<int:nro_matricula>/detalle/<int:id_seccion>/nota")
-@jwt_required()
+@admin_required
 def record_grade(nro_matricula, id_seccion):
-    """Register or correct a final grade and expose its academic outcome."""
-    matricula = Matricula.query.get_or_404(nro_matricula)
-    _assert_owner(matricula.cod_alumno)
+    """Registra o corrige una nota final (solo administrador)."""
+    db.get_or_404(Matricula, nro_matricula)
     data = request.get_json(silent=True) or {}
     nota_final = data.get("nota_final")
     if isinstance(nota_final, bool) or not isinstance(nota_final, (int, float)):
@@ -236,9 +245,9 @@ def record_grade(nro_matricula, id_seccion):
     if not detail:
         raise ApiError("detalle_no_encontrado", "No existe una matrícula activa para esa sección.", 404)
 
-    detail.nota_final = round(nota_final, 2)
+    detail.nota_final = round(float(nota_final), 2)
     db.session.commit()
-    academic_status = "aprobado" if detail.nota_final >= current_app.config["PASSING_GRADE"] else "desaprobado"
+    academic_status = "aprobado" if float(detail.nota_final) >= current_app.config["PASSING_GRADE"] else "desaprobado"
     return jsonify(
         detalle={
             "id": detail.id,

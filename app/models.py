@@ -288,6 +288,9 @@ class Alumno(db.Model):
     corr_pe = db.Column(db.SmallInteger, nullable=False, default=1)  # Plan 2019
     estado = db.Column(db.String(12), nullable=False, default="activo")
     fecha_ingreso = db.Column(db.Date, nullable=False)
+    debe_cambiar_password = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    email_personal = db.Column(db.String(254))
+    telefono = db.Column(db.String(20))
 
     plan = relationship("PlanEstudio")
 
@@ -311,12 +314,40 @@ class Alumno(db.Model):
             "cod_esc": self.cod_esc,
             "corr_pe": self.corr_pe,
             "id_plan": self.corr_pe,
+            "rol": "alumno",
+            "debe_cambiar_password": bool(self.debe_cambiar_password),
+            "email_personal": self.email_personal,
+            "telefono": self.telefono,
             "facultad": "FIIS - FACULTAD DE INGENIERÍA INDUSTRIAL Y DE SISTEMAS",
             "escuela": "E.P. DE INGENIERÍA DE SISTEMAS",
             "plan": self.plan.to_dict() if self.plan else {
                 "id_plan": self.corr_pe,
-                "nombre": "Malla Curricular Vigente 2019" if self.corr_pe == 1 else "Plan Curricular 2010",
+                "nombre": "Plan 2019" if self.corr_pe == 1 else "Plan 2010",
             },
+        }
+
+
+# 11-B. ADMINISTRADOR (usuario con permisos de gestión: notas, alumnos, períodos)
+class Administrador(db.Model):
+    __tablename__ = "administrador"
+    id_admin = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    usuario = db.Column(db.String(50), nullable=False, unique=True)
+    nombres = db.Column(db.String(150), nullable=False)
+    email = db.Column(db.String(254))
+    password_hash = db.Column(db.String(255), nullable=False)
+    activo = db.Column(db.Boolean, nullable=False, default=True)
+    debe_cambiar_password = db.Column(db.Boolean, nullable=False, default=False)
+
+    def to_dict(self):
+        return {
+            "id_admin": self.id_admin,
+            "usuario": self.usuario,
+            "nombres": self.nombres,
+            "apellidos": "",
+            "email": self.email,
+            "rol": "admin",
+            "activo": self.activo,
+            "debe_cambiar_password": bool(self.debe_cambiar_password),
         }
 
 
