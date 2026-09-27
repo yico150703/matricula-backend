@@ -19,7 +19,12 @@ def token_for_alumno(alumno):
 
 
 def token_for_admin(admin):
-    return create_access_token(identity=f"admin:{admin.id_admin}", additional_claims={"rol": "admin"})
+    """Token del personal (admin, jefe, director, asistente, docente)."""
+    return create_access_token(identity=f"staff:{admin.id_admin}", additional_claims={"rol": admin.rol or "admin"})
+
+
+token_for_staff = token_for_admin
+ROLES_STAFF = {"admin", "jefe", "director", "asistente", "docente"}
 
 
 def current_role():
@@ -30,9 +35,13 @@ def is_admin():
     return current_role() == "admin"
 
 
+def is_staff():
+    return current_role() in ROLES_STAFF
+
+
 def current_admin_id():
     identity = get_jwt_identity() or ""
-    if not identity.startswith("admin:"):
+    if not identity.startswith(("admin:", "staff:")):
         return None
     try:
         return int(identity.split(":", 1)[1])
@@ -66,3 +75,19 @@ def validate_new_password(password, *, forbidden=()):
     if password in forbidden:
         raise ApiError("password_invalida", "La nueva contraseña no puede ser igual a tu código ni a la contraseña actual.", 400)
     return password
+
+
+def roles_required(*roles):
+    """Permite el acceso solo a los roles indicados (cada rol ve únicamente sus funciones)."""
+
+    def deco(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            verify_jwt_in_request()
+            if current_role() not in roles:
+                raise ApiError("rol_no_autorizado", "Tu rol no tiene acceso a esta función.", 403)
+            return fn(*args, **kwargs)
+
+        return wrapper
+
+    return deco

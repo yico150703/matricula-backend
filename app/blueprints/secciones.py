@@ -46,12 +46,14 @@ def available_sections(id_periodo):
     try:
         verify_jwt_in_request(optional=True)
         identity = get_jwt_identity()
-        if identity and not str(identity).startswith("admin:"):
+        if identity and not str(identity).startswith(("admin:", "staff:")):
             alumno = db.session.get(Alumno, identity)
     except Exception:  # token inválido: se responde como consulta pública
         alumno = None
     purgar_carritos_vencidos()
     db.session.commit()
+    if periodo.estado == "programacion":
+        return jsonify(secciones=[], mensaje="Los horarios de este período aún se están programando.")
     rows = query_secciones(
         periodo,
         plan=request.args.get("plan", type=int),

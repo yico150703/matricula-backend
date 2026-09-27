@@ -441,7 +441,8 @@ def oferta(cod_alumno):
 
     aprobados, en_curso, desaprobados = course_sets(alumno)
     reqs = prerequisitos(alumno)
-    rows = query_secciones(periodo, plan=alumno.corr_pe)
+    # Mientras el proceso de horarios no termina (fases 1-4), los alumnos no ven la programación
+    rows = [] if periodo.estado == "programacion" else query_secciones(periodo, plan=alumno.corr_pe)
     occ = ocupacion([s for s, _ in rows], alumno)
     nombres = {
         c.corr_pe * 1000 + c.cod_curso: c.den_curso

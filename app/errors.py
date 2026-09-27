@@ -14,6 +14,7 @@ class ApiError(Exception):
 def register_error_handlers(app):
     @app.errorhandler(ApiError)
     def api_error(error):
+        db.session.rollback()  # nada de un intento fallido queda a medio aplicar
         return jsonify(error=error.error, detail=error.detail), error.status
 
     @app.errorhandler(404)

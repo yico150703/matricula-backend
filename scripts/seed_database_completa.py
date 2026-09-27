@@ -32,6 +32,9 @@ if hasattr(sys.stderr, "reconfigure"):
 from app import create_app
 from app.extensions import db
 from app.models import (
+    ProcesoHorario,
+    SolicitudCambio,
+    SolicitudMensaje,
     AppMeta,
     CarritoItem,
     SeccionSesion,
@@ -95,7 +98,18 @@ NEW_COLUMNS = {
         "email_personal": "VARCHAR(254)",
         "telefono": "VARCHAR(20)",
     },
-    "horario_d_c_seccion": {"turno": "VARCHAR(1) NOT NULL DEFAULT 'M'"},
+    "solicitud_cambio": {
+        "anterior": "VARCHAR(300)",
+    },
+    "horario_d_c_seccion": {
+        "turno": "VARCHAR(1) NOT NULL DEFAULT 'M'",
+        "id_docente": "INTEGER",
+        "estado_docente": "VARCHAR(12) NOT NULL DEFAULT 'confirmado'",
+    },
+    "administrador": {
+        "rol": "VARCHAR(20) NOT NULL DEFAULT 'admin'",
+        "apellidos": "VARCHAR(150)",
+    },
     "matricula_detalle": {
         "n1": "NUMERIC(4,2)",
         "n2": "NUMERIC(4,2)",
@@ -168,6 +182,82 @@ def ensure_demo_student():
     print("✓ Alumno demo 20260001 creado (contraseña inicial = código).")
 
 
+# Cuentas de prueba (se muestran en el inicio de sesión). Solo se crean si no existen:
+# si alguien cambia la contraseña, se respeta.
+PERSONAL_DEMO = [
+    ("jefedepartamentoescuelasistemas", "jefedepartamentoescuelasistemas@unfv.edu.pe", "Jefe de Departamento", "E.P. Ingeniería de Sistemas", "jefe", "Jefe2026!"),
+    ("directorescuelasistemas", "directorescuelasistemas@unfv.edu.pe", "Director de Escuela", "E.P. Ingeniería de Sistemas", "director", "Director2026!"),
+    ("asistenteescuelasistemas", "asistenteescuelasistemas@unfv.edu.pe", "Asistente de Escuela", "E.P. Ingeniería de Sistemas", "asistente", "Asistente2026!"),
+    ("jalvaradotorres", "jalvaradotorres@unfv.pe", "Juan Carlos", "Alvarado Torres", "docente", "Docente2026!"),
+]
+
+
+def ensure_personal_demo():
+    for usuario, email, nombres, apellidos, rol, clave in PERSONAL_DEMO:
+        existente = Administrador.query.filter_by(usuario=usuario).first()
+        if existente:
+            if existente.apellidos == "Escuela de Sistemas":  # nombre de prueba anterior
+                existente.apellidos = apellidos
+            continue
+        db.session.add(Administrador(usuario=usuario, email=email, nombres=nombres, apellidos=apellidos, rol=rol,
+                                     password_hash=generate_password_hash(clave), activo=True, debe_cambiar_password=False))
+        print(f"✓ Cuenta de prueba {rol}: {email}")
+    db.session.commit()
+
+
+def ensure_docentes():
+    """Crea una cuenta de docente por cada profesor de los horarios oficiales y la vincula a sus secciones."""
+    from app.usuarios import base_usuario, correo_personal, separar_nombre_horario, usuario_disponible
+
+    creados = 0
+    cache = {}
+    for s in HorarioDCSeccion.query.filter(HorarioDCSeccion.id_docente.is_(None)).all():
+        nombre = (s.docente or "").strip()
+        if not nombre or nombre == "POR ASIGNAR" or nombre.startswith("DPTO.") or nombre == "REGISTRO HISTORICO":
+            continue
+        nombres, apellidos = separar_nombre_horario(nombre)
+        base = base_usuario(nombres, apellidos)
+        if base not in cache:
+            docente = Administrador.query.filter_by(usuario=base, rol="docente").first()
+            if not docente:
+                usuario = usuario_disponible(base)
+                docente = Administrador(usuario=usuario, email=correo_personal(usuario), nombres=nombres or "-", apellidos=apellidos, rol="docente",
+                                        password_hash=generate_password_hash(usuario), activo=True, debe_cambiar_password=True)
+                db.session.add(docente)
+                db.session.flush()
+                creados += 1
+            cache[base] = docente
+        s.id_docente = cache[base].id_admin
+    db.session.commit()
+    if creados:
+        print(f"✓ {creados} cuentas de docentes creadas desde los horarios (contraseña inicial = usuario).")
+
+
+def ensure_procesos():
+    for p in PeriodoAcademico.query.filter(PeriodoAcademico.estado != "historico").all():
+        if not db.session.get(ProcesoHorario, p.unique_id):
+            fase = 5 if p.estado == "en_curso" else 7 if p.estado == "cerrado" else 1
+            db.session.add(ProcesoHorario(id_periodo=p.unique_id, fase=fase, confirmado_jefe=fase >= 4, confirmado_director=fase >= 4, historial="[]"))
+    db.session.commit()
+
+
+def ensure_periodo_planificacion():
+    """Período 2027-1 en planificación para iniciar el proceso de horarios (fase 1)."""
+    if PeriodoAcademico.query.filter_by(cod_per_acad="2027-1").first():
+        return
+    nuevo = (db.session.query(db.func.max(PeriodoAcademico.unique_id)).scalar() or 0) + 1
+    db.session.add(PeriodoAcademico(unique_id=nuevo, cod_per_acad="2027-1", fec_inicio=date(2027, 3, 15), fec_fin=date(2027, 7, 30), estado="programacion"))
+    db.session.flush()
+    nuevo_h = (db.session.query(db.func.max(HorarioCab.id_horario)).scalar() or 0) + 1
+    db.session.add(HorarioCab(id_horario=nuevo_h, cod_per_acad="2027-1", cod_fac=1, cod_esc=1, corr_pe=1, fec_inicio=date(2027, 3, 15)))
+    db.session.flush()
+    for sem in range(1, 11):
+        db.session.add(HorarioDet(id_horario=nuevo_h, semestre_corr=sem, semestre_desc=f"Ciclo {sem}"))
+    db.session.add(ProcesoHorario(id_periodo=nuevo, fase=1, historial="[]"))
+    db.session.commit()
+    print("✓ Período 2027-1 creado en planificación (fase 1 del proceso de horarios).")
+
+
 def version_catalogo():
     meta = db.session.get(AppMeta, "catalogo")
     return meta.valor if meta else None
@@ -176,7 +266,7 @@ def version_catalogo():
 def limpiar_catalogo_anterior():
     """Elimina horarios, cursos y matrículas de prueba del catálogo anterior. Conserva alumnos y administradores."""
     print("! Actualizando catálogo: se reemplazan horarios/cursos y se eliminan matrículas y notas de prueba.")
-    for modelo in (CarritoItem, MatriculaDetalle, Matricula, SeccionSesion, HorarioDCSeccion, HorarioDCurso, HorarioDet, HorarioCab, MezclaCurso, Curso):
+    for modelo in (SolicitudMensaje, SolicitudCambio, CarritoItem, MatriculaDetalle, Matricula, SeccionSesion, HorarioDCSeccion, HorarioDCurso, HorarioDet, HorarioCab, MezclaCurso, Curso):
         db.session.query(modelo).delete(synchronize_session=False)
     # El Plan 2010 ya no se usa: sus alumnos pasan al Plan 2019 vigente
     db.session.query(Alumno).filter(Alumno.corr_pe != 1).update({Alumno.corr_pe: 1}, synchronize_session=False)
@@ -207,6 +297,10 @@ def main(argv=None):
             print(f"✓ Catálogo {CATALOGO_VERSION} vigente: se conservan los datos existentes.")
         ensure_admin()
         ensure_demo_student()
+        ensure_personal_demo()
+        ensure_docentes()
+        ensure_procesos()
+        ensure_periodo_planificacion()
         print("✓ Base de datos lista.")
 
 

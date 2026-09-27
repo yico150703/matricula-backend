@@ -249,6 +249,8 @@ class HorarioDCSeccion(db.Model):
     cupo_maximo = db.Column(db.SmallInteger, nullable=False, default=35)
     cupo_disponible = db.Column(db.SmallInteger, nullable=False, default=30)  # legado: la ocupación se calcula
     turno = db.Column(db.String(1), nullable=False, default="M", server_default="M")  # M, T, N
+    id_docente = db.Column(db.Integer, ForeignKey("administrador.id_admin", ondelete="SET NULL"))
+    estado_docente = db.Column(db.String(12), nullable=False, default="pendiente", server_default="confirmado")  # pendiente|confirmado|observado
 
     curso_programado = relationship("HorarioDCurso", back_populates="secciones")
     sesiones = relationship(
@@ -304,6 +306,8 @@ class HorarioDCSeccion(db.Model):
             "aula": self.aula,
             "ubicacion": ubicacion_aula(self.aula),
             "docente": self.docente,
+            "id_docente": self.id_docente,
+            "estado_docente": self.estado_docente,
             "turno": self.turno,
             "turno_nombre": TURNOS.get(self.turno, self.turno),
             "sesiones": sesiones,
@@ -401,24 +405,50 @@ class Alumno(db.Model):
 
 
 # 11-B. ADMINISTRADOR (usuario con permisos de gestión: notas, alumnos, períodos)
+ROLES_PERSONAL = {
+    "admin": "Administrador del sistema",
+    "jefe": "Jefe de Departamento",
+    "director": "Director de Escuela",
+    "asistente": "Asistente de Escuela",
+    "docente": "Docente",
+}
+
+
 class Administrador(db.Model):
+    """Personal de la universidad con acceso al sistema (tabla histórica 'administrador').
+
+    rol: admin (administrador del sistema), jefe (jefe de departamento: arma horarios),
+    director (director de escuela: asigna docentes), asistente (asistente de escuela: asigna aulas)
+    y docente (confirma su horario o reporta problemas).
+    """
+
     __tablename__ = "administrador"
     id_admin = db.Column(db.Integer, primary_key=True, autoincrement=True)
     usuario = db.Column(db.String(50), nullable=False, unique=True)
     nombres = db.Column(db.String(150), nullable=False)
+    apellidos = db.Column(db.String(150))
     email = db.Column(db.String(254))
     password_hash = db.Column(db.String(255), nullable=False)
     activo = db.Column(db.Boolean, nullable=False, default=True)
     debe_cambiar_password = db.Column(db.Boolean, nullable=False, default=False)
+    rol = db.Column(db.String(20), nullable=False, default="admin", server_default="admin")
+
+    @property
+    def nombre_docente(self):
+        """Formato de los horarios oficiales: APELLIDOS NOMBRES en mayúsculas."""
+        return " ".join(filter(None, [self.apellidos, self.nombres])).upper()
 
     def to_dict(self):
         return {
             "id_admin": self.id_admin,
+            "id_usuario": self.id_admin,
             "usuario": self.usuario,
             "nombres": self.nombres,
-            "apellidos": "",
+            "apellidos": self.apellidos or "",
+            "nombre_completo": " ".join(filter(None, [self.nombres, self.apellidos])),
             "email": self.email,
-            "rol": "admin",
+            "rol": self.rol,
+            "rol_nombre": ROLES_PERSONAL.get(self.rol, self.rol),
             "activo": self.activo,
             "debe_cambiar_password": bool(self.debe_cambiar_password),
         }
@@ -484,6 +514,68 @@ class SolicitudPassword(db.Model):
     estado = db.Column(db.String(12), nullable=False, default="pendiente")  # pendiente | usada | atendida | anulada
     canal = db.Column(db.String(12), nullable=False, default="oficina")  # correo | oficina
     atendido_en = db.Column(db.DateTime)
+
+
+# 16. PROCESO DE CREACIÓN DE HORARIOS (una instancia por período)
+FASES = {
+    1: "Horarios por curso (Jefe de Departamento)",
+    2: "Asignación de docentes (Director de Escuela)",
+    3: "Confirmación y asignación de aulas (Asistente)",
+    4: "Confirmación de docentes",
+    5: "Horarios establecidos · Matrícula abierta",
+    6: "Ajustes de horario (hasta 2 semanas de clases)",
+    7: "Proceso cerrado",
+}
+
+
+class ProcesoHorario(db.Model):
+    __tablename__ = "proceso_horario"
+    id_periodo = db.Column(BIGINT, ForeignKey("periodo_academico.unique_id", ondelete="CASCADE"), primary_key=True)
+    fase = db.Column(db.SmallInteger, nullable=False, default=1)
+    confirmado_jefe = db.Column(db.Boolean, nullable=False, default=False)
+    confirmado_director = db.Column(db.Boolean, nullable=False, default=False)
+    observacion = db.Column(db.String(500))  # p. ej. motivo de devolución al jefe
+    actualizado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    historial = db.Column(db.Text, nullable=False, default="[]")  # JSON: [{fase, fecha, usuario, accion}]
+
+    periodo = relationship("PeriodoAcademico")
+
+
+class SolicitudCambio(db.Model):
+    """Pedido de cambio de horario, docente o aula que otro rol debe aceptar."""
+
+    __tablename__ = "solicitud_cambio"
+    id = db.Column(BIGINT, primary_key=True, autoincrement=True)
+    id_periodo = db.Column(BIGINT, ForeignKey("periodo_academico.unique_id", ondelete="CASCADE"), nullable=False, index=True)
+    id_seccion = db.Column(BIGINT, ForeignKey("horario_d_c_seccion.id_seccion", ondelete="CASCADE"), nullable=False)
+    tipo = db.Column(db.String(10), nullable=False)  # horario | docente | aula
+    id_autor = db.Column(db.Integer, ForeignKey("administrador.id_admin", ondelete="CASCADE"), nullable=False)
+    rol_autor = db.Column(db.String(20), nullable=False)
+    rol_destino = db.Column(db.String(20), nullable=False)
+    descripcion = db.Column(db.String(1000), nullable=False)
+    propuesta = db.Column(db.Text)  # JSON con el cambio propuesto
+    anterior = db.Column(db.String(300))  # cómo estaba la sección al crear la solicitud
+    estado = db.Column(db.String(12), nullable=False, default="pendiente")  # pendiente | aprobada | rechazada
+    respuesta = db.Column(db.String(1000))
+    id_resuelto_por = db.Column(db.Integer, ForeignKey("administrador.id_admin", ondelete="SET NULL"))
+    creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    resuelto_en = db.Column(db.DateTime)
+
+    seccion = relationship("HorarioDCSeccion")
+    autor = relationship("Administrador", foreign_keys=[id_autor])
+    mensajes = relationship("SolicitudMensaje", cascade="all, delete-orphan", order_by="SolicitudMensaje.creado_en")
+
+
+class SolicitudMensaje(db.Model):
+    __tablename__ = "solicitud_mensaje"
+    id = db.Column(BIGINT, primary_key=True, autoincrement=True)
+    id_solicitud = db.Column(BIGINT, ForeignKey("solicitud_cambio.id", ondelete="CASCADE"), nullable=False, index=True)
+    id_autor = db.Column(db.Integer, ForeignKey("administrador.id_admin", ondelete="CASCADE"), nullable=False)
+    rol = db.Column(db.String(20), nullable=False)
+    texto = db.Column(db.String(1000), nullable=False)
+    creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    autor = relationship("Administrador")
 
 
 # 15. METADATOS DE LA APLICACIÓN (versión del catálogo cargado, etc.)

@@ -16,6 +16,7 @@ from .models import (
     Matricula,
     MatriculaDetalle,
     MezclaCurso,
+    ProcesoHorario,
 )
 
 
@@ -252,8 +253,13 @@ def creditos(seccion):
 def validar_secciones(alumno, periodo, nuevas, ocupadas, *, verificar_cupo=True):
     """Valida que el alumno pueda llevar las secciones `nuevas`, sumadas a las `ocupadas`
     (ya matriculadas o en el carrito). Lanza ApiError con un mensaje claro si algo falla."""
-    if periodo.estado != "en_curso":
-        raise ApiError("periodo_no_disponible", f"El período {periodo.cod_per_acad} no está abierto para matrícula.", 409)
+    proceso = db.session.get(ProcesoHorario, periodo.unique_id)
+    if periodo.estado != "en_curso" or (proceso is not None and proceso.fase not in (5, 6)):
+        raise ApiError(
+            "periodo_no_disponible",
+            f"La matrícula de {periodo.cod_per_acad} aún no está abierta: los horarios se están programando.",
+            409,
+        )
 
     aprobados, en_curso, _ = course_sets(alumno)
     reqs = prerequisitos(alumno)

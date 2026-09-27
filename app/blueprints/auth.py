@@ -4,14 +4,14 @@ import secrets
 from datetime import datetime, timedelta
 
 from flask import Blueprint, current_app, jsonify, request
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..errors import ApiError
 from ..extensions import db
 from ..mailer import mail_configured, send_mail
 from ..models import Administrador, Alumno, SolicitudPassword
-from ..security import current_admin_id, is_admin, token_for_admin, token_for_alumno, validate_new_password
+from ..security import current_admin_id, is_staff, token_for_admin, token_for_alumno, validate_new_password
 
 bp = Blueprint("auth", __name__)
 
@@ -27,11 +27,13 @@ def _session_payload(user, token, rol):
 
 
 def _current_user():
-    if is_admin():
+    if is_staff():
         admin = db.session.get(Administrador, current_admin_id())
         if not admin or not admin.activo:
-            raise ApiError("sesion_invalida", "La cuenta de administrador no está disponible.", 401)
-        return admin, "admin"
+            raise ApiError("sesion_invalida", "La cuenta no está disponible.", 401)
+        if admin.rol != get_jwt().get("rol"):
+            raise ApiError("sesion_invalida", "Tu rol cambió. Vuelve a iniciar sesión.", 401)
+        return admin, admin.rol
     alumno = db.session.get(Alumno, get_jwt_identity())
     if not alumno:
         raise ApiError("sesion_invalida", "El alumno de esta sesión ya no existe.", 401)
@@ -47,11 +49,13 @@ def login():
     if not raw_user or not password:
         raise ApiError("credenciales_invalidas", "Usuario y contraseña son obligatorios.", 400)
 
-    admin = Administrador.query.filter(db.func.lower(Administrador.usuario) == raw_user.lower()).first()
+    admin = Administrador.query.filter(
+        (db.func.lower(Administrador.usuario) == raw_user.lower()) | (db.func.lower(Administrador.email) == raw_user.lower())
+    ).first()
     if admin and check_password_hash(admin.password_hash, password):
         if not admin.activo:
-            raise ApiError("usuario_inactivo", "La cuenta de administrador está desactivada.", 403)
-        return jsonify(_session_payload(admin, token_for_admin(admin), "admin"))
+            raise ApiError("usuario_inactivo", "Tu cuenta está desactivada. Comunícate con el administrador del sistema.", 403)
+        return jsonify(_session_payload(admin, token_for_admin(admin), admin.rol))
 
     lookup = raw_user.lower()
     alumno = db.session.get(Alumno, raw_user) or Alumno.query.filter(db.func.lower(Alumno.email) == lookup).first()
@@ -134,7 +138,9 @@ def _buscar_usuario(raw):
     raw = (raw or "").strip()
     if not raw:
         return None, None
-    admin = Administrador.query.filter(db.func.lower(Administrador.usuario) == raw.lower()).first()
+    admin = Administrador.query.filter(
+        (db.func.lower(Administrador.usuario) == raw.lower()) | (db.func.lower(Administrador.email) == raw.lower())
+    ).first()
     if admin:
         return admin, "admin"
     alumno = db.session.get(Alumno, raw) or Alumno.query.filter(db.func.lower(Alumno.email) == raw.lower()).first()
@@ -143,6 +149,7 @@ def _buscar_usuario(raw):
 
 def crear_solicitud(user, rol, canal):
     """Crea un token de un solo uso (se guarda solo su hash) y anula los anteriores del usuario."""
+    rol = "alumno" if rol == "alumno" else "admin"  # todo el personal comparte la tabla 'administrador'
     usuario = user.cod_alumno if rol == "alumno" else user.usuario
     SolicitudPassword.query.filter_by(rol=rol, usuario=usuario, estado="pendiente").update({"estado": "anulada"})
     token = secrets.token_urlsafe(32)
