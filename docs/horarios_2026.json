@@ -1,0 +1,4595 @@
+{
+ "codigos": {
+  "1": "100375",
+  "2": "100549",
+  "3": "100550",
+  "4": "100553",
+  "5": "100551",
+  "6": "100552",
+  "7": "104849",
+  "8": "101512",
+  "17": "100387",
+  "18": "100003",
+  "19": "103263",
+  "20": "100561",
+  "21": "100377",
+  "22": "100835",
+  "23": "101516",
+  "24": "101517",
+  "31": "101523",
+  "32": "101524",
+  "33": "101525",
+  "34": "101526",
+  "35": "101527",
+  "36": "101038",
+  "37": "101528",
+  "71": "101554",
+  "74": "101555",
+  "46": "101534",
+  "47": "101490",
+  "48": "101535",
+  "49": "101536",
+  "50": "101537",
+  "51": "101538",
+  "52": "104848",
+  "60": "101543",
+  "61": "101544",
+  "62": "101545",
+  "63": "101546",
+  "64": "101547",
+  "65": "101548",
+  "9": "100382",
+  "10": "100555",
+  "11": "100556",
+  "12": "100557",
+  "13": "100442",
+  "14": "101513",
+  "15": "101514",
+  "16": "101515",
+  "25": "101518",
+  "26": "101519",
+  "27": "100015",
+  "28": "101520",
+  "29": "101521",
+  "30": "101522",
+  "39": "101529",
+  "40": "104850",
+  "41": "101530",
+  "42": "101531",
+  "43": "101532",
+  "44": "101533",
+  "72": "101559",
+  "75": "101560",
+  "78": "101556",
+  "54": "101539",
+  "55": "101540",
+  "56": "101541",
+  "57": "101270",
+  "58": "101542",
+  "59": "101052",
+  "66": "101549",
+  "67": "101550",
+  "68": "101551",
+  "69": "101552",
+  "70": "101553"
+ },
+ "secciones": [
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 1,
+   "ciclo": 1,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "SALAZAR DEZA CARMEN",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "11:20",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 2,
+   "ciclo": 1,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "LEON VELARDE CESAR GERARDO",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "09:40",
+     "fin": "11:20"
+    },
+    {
+     "dia": 3,
+     "inicio": "09:40",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 3,
+   "ciclo": 1,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 35,
+   "docente": null,
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "09:40",
+     "fin": "11:20"
+    },
+    {
+     "dia": 4,
+     "inicio": "09:40",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 4,
+   "ciclo": 1,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "DPTO. CIENCIAS NATURALES",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "08:00",
+     "fin": "09:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "08:00",
+     "fin": "09:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 5,
+   "ciclo": 1,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "MUJICA RUIZ OSCAR HUGO",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "10:30",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 6,
+   "ciclo": 1,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 35,
+   "docente": null,
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 6,
+     "inicio": "08:00",
+     "fin": "09:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 7,
+   "ciclo": 1,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "DPTO. CIENCIAS NATURALES",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "08:00",
+     "fin": "09:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "08:00",
+     "fin": "09:40"
+    },
+    {
+     "dia": 5,
+     "inicio": "08:00",
+     "fin": "10:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 8,
+   "ciclo": 1,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "MAYHUASCA GUERRA JORGE VICTOR",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "11:20",
+     "fin": "13:00"
+    },
+    {
+     "dia": 3,
+     "inicio": "11:20",
+     "fin": "13:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 1,
+   "ciclo": 1,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "SALAZAR DEZA CARMEN",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 4,
+     "inicio": "11:20",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 2,
+   "ciclo": 1,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "SALAZAR DEZA CARMEN",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "08:00",
+     "fin": "09:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "08:00",
+     "fin": "09:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 3,
+   "ciclo": 1,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "VALES CARRILLO JORGE ALBERTO",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "08:00",
+     "fin": "09:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "08:00",
+     "fin": "09:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 4,
+   "ciclo": 1,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "DPTO. CIENCIAS NATURALES",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "09:40",
+     "fin": "11:20"
+    },
+    {
+     "dia": 3,
+     "inicio": "09:40",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 5,
+   "ciclo": 1,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "LEON VELARDE CESAR GERARDO",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "08:00",
+     "fin": "10:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 6,
+   "ciclo": 1,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 35,
+   "docente": null,
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 6,
+     "inicio": "09:40",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 7,
+   "ciclo": 1,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "DPTO. CIENCIAS NATURALES",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "09:40",
+     "fin": "11:20"
+    },
+    {
+     "dia": 4,
+     "inicio": "09:40",
+     "fin": "11:20"
+    },
+    {
+     "dia": 5,
+     "inicio": "10:30",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 8,
+   "ciclo": 1,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "MUJICA RUIZ OSCAR HUGO",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "11:20",
+     "fin": "13:00"
+    },
+    {
+     "dia": 3,
+     "inicio": "11:20",
+     "fin": "13:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 1,
+   "ciclo": 1,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 35,
+   "docente": null,
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "16:20",
+     "fin": "18:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 2,
+   "ciclo": 1,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 35,
+   "docente": "RAMIREZ SAAVEDRA NOEMI",
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "14:40",
+     "fin": "16:20"
+    },
+    {
+     "dia": 3,
+     "inicio": "14:40",
+     "fin": "16:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 3,
+   "ciclo": 1,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 35,
+   "docente": "NARRO ANDRADE MANUEL",
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "14:40",
+     "fin": "16:20"
+    },
+    {
+     "dia": 4,
+     "inicio": "14:40",
+     "fin": "16:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 4,
+   "ciclo": 1,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 35,
+   "docente": "DPTO. CIENCIAS NATURALES",
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "13:00",
+     "fin": "14:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "13:00",
+     "fin": "14:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 5,
+   "ciclo": 1,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 35,
+   "docente": "HUAPAYA SOTERO ARMANDO RICARDO",
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "14:40",
+     "fin": "17:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 6,
+   "ciclo": 1,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 35,
+   "docente": null,
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 6,
+     "inicio": "14:40",
+     "fin": "16:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 7,
+   "ciclo": 1,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 35,
+   "docente": "DPTO. CIENCIAS NATURALES",
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "13:00",
+     "fin": "14:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "13:00",
+     "fin": "14:40"
+    },
+    {
+     "dia": 5,
+     "inicio": "12:10",
+     "fin": "14:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 8,
+   "ciclo": 1,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 35,
+   "docente": "ALVARADO ALVARADO JOSE ORLANDO",
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "16:20",
+     "fin": "18:00"
+    },
+    {
+     "dia": 3,
+     "inicio": "16:20",
+     "fin": "18:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 17,
+   "ciclo": 3,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "SALAZAR DEZA CARMEN",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "09:40",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 18,
+   "ciclo": 3,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "COLCA GARCIA HEDDY",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "08:50",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 19,
+   "ciclo": 3,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "RAMIREZ SAAVEDRA NOEMI",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 4,
+     "inicio": "09:40",
+     "fin": "11:20"
+    },
+    {
+     "dia": 5,
+     "inicio": "11:20",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 20,
+   "ciclo": 3,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "RAMIREZ SAAVEDRA NOEMI",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "11:20",
+     "fin": "13:00"
+    },
+    {
+     "dia": 4,
+     "inicio": "11:20",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 21,
+   "ciclo": 3,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "MUJICA RUIZ OSCAR HUGO",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "09:40",
+     "fin": "11:20"
+    },
+    {
+     "dia": 3,
+     "inicio": "09:40",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 22,
+   "ciclo": 3,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "DPTO. CIENCIAS NATURALES",
+   "aula": "LAB FISICA",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "08:00",
+     "fin": "09:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "08:00",
+     "fin": "09:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 23,
+   "ciclo": 3,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "DPTO. CIENCIAS NATURALES",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "07:10",
+     "fin": "09:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "07:10",
+     "fin": "09:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 24,
+   "ciclo": 3,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "HUAPAYA SOTERO ARMANDO RICARDO",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "11:20",
+     "fin": "13:00"
+    },
+    {
+     "dia": 3,
+     "inicio": "11:20",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 17,
+   "ciclo": 3,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "DPTO. HUMANIDADES",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 3,
+     "inicio": "12:10",
+     "fin": "13:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 18,
+   "ciclo": 3,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "SOTOMAYOR ABARCA JULIO",
+   "aula": "D-204",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "07:10",
+     "fin": "09:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 19,
+   "ciclo": 3,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "APARICIO MONTENEGRO PABLO R.",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 4,
+     "inicio": "11:20",
+     "fin": "13:00"
+    },
+    {
+     "dia": 5,
+     "inicio": "09:40",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 20,
+   "ciclo": 3,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 30,
+   "docente": null,
+   "aula": "D-204",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "11:20",
+     "fin": "13:00"
+    },
+    {
+     "dia": 5,
+     "inicio": "11:20",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 21,
+   "ciclo": 3,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "LIRA CAMARGO JORGE",
+   "aula": "D-204",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "08:00",
+     "fin": "09:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "08:00",
+     "fin": "09:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 22,
+   "ciclo": 3,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "DPTO. CIENCIAS NATURALES",
+   "aula": "LAB FISICA",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "09:40",
+     "fin": "11:20"
+    },
+    {
+     "dia": 4,
+     "inicio": "09:40",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 23,
+   "ciclo": 3,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "DPTO. CIENCIAS NATURALES",
+   "aula": "D-204",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "09:40",
+     "fin": "12:10"
+    },
+    {
+     "dia": 3,
+     "inicio": "09:40",
+     "fin": "12:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 24,
+   "ciclo": 3,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "APARICIO MONTENEGRO PABLO R.",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "08:00",
+     "fin": "09:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "08:00",
+     "fin": "09:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 17,
+   "ciclo": 3,
+   "seccion": "C",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "SALAZAR DEZA CARMEN",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "14:40",
+     "fin": "16:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 18,
+   "ciclo": 3,
+   "seccion": "C",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "LEON VELARDE CESAR GERARDO",
+   "aula": "D-308",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "13:00",
+     "fin": "15:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 19,
+   "ciclo": 3,
+   "seccion": "C",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "MICHUE SALGUEDO EFREN S.",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 4,
+     "inicio": "14:40",
+     "fin": "16:20"
+    },
+    {
+     "dia": 5,
+     "inicio": "15:30",
+     "fin": "17:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 20,
+   "ciclo": 3,
+   "seccion": "C",
+   "turno": "M",
+   "cupo": 30,
+   "docente": null,
+   "aula": "D-308",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "16:20",
+     "fin": "18:00"
+    },
+    {
+     "dia": 4,
+     "inicio": "16:20",
+     "fin": "18:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 21,
+   "ciclo": 3,
+   "seccion": "C",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "ALFARO BERNEDO JUAN OSWALDO",
+   "aula": "D-308",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "14:40",
+     "fin": "16:20"
+    },
+    {
+     "dia": 3,
+     "inicio": "14:40",
+     "fin": "16:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 22,
+   "ciclo": 3,
+   "seccion": "C",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "DPTO. CIENCIAS NATURALES",
+   "aula": "LAB FISICA",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "13:00",
+     "fin": "14:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "13:00",
+     "fin": "14:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 23,
+   "ciclo": 3,
+   "seccion": "C",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "DPTO. CIENCIAS NATURALES",
+   "aula": "D-308",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "12:10",
+     "fin": "14:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "12:10",
+     "fin": "14:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 24,
+   "ciclo": 3,
+   "seccion": "C",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "PETRLIK AZABACHE IVAN CARLO",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "16:20",
+     "fin": "18:00"
+    },
+    {
+     "dia": 3,
+     "inicio": "16:20",
+     "fin": "18:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 31,
+   "ciclo": 5,
+   "seccion": "A",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "HUAPAYA SOTERO ARMANDO RICARDO",
+   "aula": "LAB 5",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "16:20",
+     "fin": "18:00"
+    },
+    {
+     "dia": 4,
+     "inicio": "16:20",
+     "fin": "18:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 32,
+   "ciclo": 5,
+   "seccion": "A",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "ALVARADO ALVARADO JOSE ORLANDO",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "13:00",
+     "fin": "14:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "13:00",
+     "fin": "14:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 33,
+   "ciclo": 5,
+   "seccion": "A",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "SOTO SOTO LUIS",
+   "aula": "LAB 5",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "16:20",
+     "fin": "18:00"
+    },
+    {
+     "dia": 3,
+     "inicio": "16:20",
+     "fin": "18:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 34,
+   "ciclo": 5,
+   "seccion": "A",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "MUÑOZ RAMOS LUIS AVELINO",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "14:40",
+     "fin": "16:20"
+    },
+    {
+     "dia": 4,
+     "inicio": "14:40",
+     "fin": "16:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 35,
+   "ciclo": 5,
+   "seccion": "A",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "COLCA GARCIA HEDDY",
+   "aula": "LAB ELEC",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "13:00",
+     "fin": "14:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "13:00",
+     "fin": "14:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 36,
+   "ciclo": 5,
+   "seccion": "A",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "PETRLIK AZABACHE IVAN CARLO",
+   "aula": "LAB 5",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "14:40",
+     "fin": "16:20"
+    },
+    {
+     "dia": 3,
+     "inicio": "14:40",
+     "fin": "16:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 37,
+   "ciclo": 5,
+   "seccion": "A",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "VALES CARRILLO JORGE ALBERTO",
+   "aula": "LAB 5",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "13:00",
+     "fin": "15:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 31,
+   "ciclo": 5,
+   "seccion": "B",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "PETRLIK AZABACHE IVAN CARLO",
+   "aula": "LAB 6",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "16:20",
+     "fin": "18:00"
+    },
+    {
+     "dia": 4,
+     "inicio": "16:20",
+     "fin": "18:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 32,
+   "ciclo": 5,
+   "seccion": "B",
+   "turno": "T",
+   "cupo": 30,
+   "docente": null,
+   "aula": "D-204",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "13:00",
+     "fin": "14:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "13:00",
+     "fin": "14:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 33,
+   "ciclo": 5,
+   "seccion": "B",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "FRANCO DEL CARPIO CARLOS MIGUEL",
+   "aula": "LAB 6",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "16:20",
+     "fin": "18:00"
+    },
+    {
+     "dia": 3,
+     "inicio": "16:20",
+     "fin": "18:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 34,
+   "ciclo": 5,
+   "seccion": "B",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "ALVARADO ALVARADO JOSE ORLANDO",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "14:40",
+     "fin": "16:20"
+    },
+    {
+     "dia": 4,
+     "inicio": "14:40",
+     "fin": "16:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 35,
+   "ciclo": 5,
+   "seccion": "B",
+   "turno": "T",
+   "cupo": 30,
+   "docente": null,
+   "aula": "LAB 6",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "13:00",
+     "fin": "14:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "13:00",
+     "fin": "14:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 36,
+   "ciclo": 5,
+   "seccion": "B",
+   "turno": "T",
+   "cupo": 30,
+   "docente": null,
+   "aula": "LAB 6",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "14:40",
+     "fin": "16:20"
+    },
+    {
+     "dia": 3,
+     "inicio": "14:40",
+     "fin": "16:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 37,
+   "ciclo": 5,
+   "seccion": "B",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "OGOSI AUQUI JOSE ANTONIO",
+   "aula": "LAB 6",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "13:00",
+     "fin": "15:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 31,
+   "ciclo": 5,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "ROJAS ROMERO KARIN",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "20:30",
+     "fin": "22:10"
+    },
+    {
+     "dia": 4,
+     "inicio": "20:30",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 32,
+   "ciclo": 5,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "SOTOMAYOR ABARCA JULIO",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "17:10",
+     "fin": "18:50"
+    },
+    {
+     "dia": 3,
+     "inicio": "17:10",
+     "fin": "18:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 33,
+   "ciclo": 5,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "VALES CARRILLO JORGE ALBERTO",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "20:30",
+     "fin": "22:10"
+    },
+    {
+     "dia": 3,
+     "inicio": "20:30",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 34,
+   "ciclo": 5,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "ACEVEDO BORREGO ADOLFO O.",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "18:50",
+     "fin": "20:30"
+    },
+    {
+     "dia": 4,
+     "inicio": "18:50",
+     "fin": "20:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 35,
+   "ciclo": 5,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": null,
+   "aula": "LAB ELEC",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "17:10",
+     "fin": "18:50"
+    },
+    {
+     "dia": 4,
+     "inicio": "17:10",
+     "fin": "18:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 36,
+   "ciclo": 5,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "SOTOMAYOR ABARCA JULIO",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "18:50",
+     "fin": "20:30"
+    },
+    {
+     "dia": 3,
+     "inicio": "18:50",
+     "fin": "20:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 37,
+   "ciclo": 5,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": null,
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "17:10",
+     "fin": "19:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 71,
+   "ciclo": 5,
+   "seccion": "E",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "COHELLO AGUIRRE ROGELIO G.",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "19:40",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 74,
+   "ciclo": 5,
+   "seccion": "E",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "YUCRA SOTOMAYOR DANIEL A.",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "19:40",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 77,
+   "ciclo": 5,
+   "seccion": "E",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "VILLAFUERTE BARRETO HERNAN O.",
+   "aula": "LAB ELEC",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "19:40",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 80,
+   "ciclo": 5,
+   "seccion": "E",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "LEZAMA GONZALES PEDRO MARTIN",
+   "aula": "LAB 3",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "19:40",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 83,
+   "ciclo": 5,
+   "seccion": "E",
+   "turno": "M",
+   "cupo": 30,
+   "docente": null,
+   "aula": "LAB FISICA",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "19:40",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 46,
+   "ciclo": 7,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "OGOSI AUQUI JOSE ANTONIO",
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "17:10",
+     "fin": "18:50"
+    },
+    {
+     "dia": 4,
+     "inicio": "17:10",
+     "fin": "18:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 47,
+   "ciclo": 7,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "GAMBOA CRUZADO JAVIER ARTURO",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "17:10",
+     "fin": "18:50"
+    },
+    {
+     "dia": 3,
+     "inicio": "17:10",
+     "fin": "18:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 48,
+   "ciclo": 7,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "GAVINO RAMOS MARTIN SABINO",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "18:50",
+     "fin": "20:30"
+    },
+    {
+     "dia": 3,
+     "inicio": "18:50",
+     "fin": "20:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 49,
+   "ciclo": 7,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "FRANCO DEL CARPIO CARLOS MIGUEL",
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "20:30",
+     "fin": "22:10"
+    },
+    {
+     "dia": 4,
+     "inicio": "20:30",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 50,
+   "ciclo": 7,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "SOTELO ANTAURCO SANTOS CIRIACO",
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "18:50",
+     "fin": "20:30"
+    },
+    {
+     "dia": 4,
+     "inicio": "18:50",
+     "fin": "20:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 51,
+   "ciclo": 7,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "SOTELO ANTAURCO SANTOS CIRIACO",
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "19:40",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 52,
+   "ciclo": 7,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "CARRANZA BARRENA WILFREDO E.",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "20:30",
+     "fin": "22:10"
+    },
+    {
+     "dia": 3,
+     "inicio": "20:30",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 46,
+   "ciclo": 7,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "YUCRA SOTOMAYOR DANIEL A.",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "17:10",
+     "fin": "18:50"
+    },
+    {
+     "dia": 4,
+     "inicio": "17:10",
+     "fin": "18:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 47,
+   "ciclo": 7,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "COHELLO AGUIRRE ROGELIO G.",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "17:10",
+     "fin": "18:50"
+    },
+    {
+     "dia": 3,
+     "inicio": "17:10",
+     "fin": "18:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 48,
+   "ciclo": 7,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "VILLAFUERTE BARRETO HERNAN O.",
+   "aula": "LAB 3",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "18:50",
+     "fin": "20:30"
+    },
+    {
+     "dia": 3,
+     "inicio": "18:50",
+     "fin": "20:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 49,
+   "ciclo": 7,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "ACEVEDO BORREGO ADOLFO O.",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "20:30",
+     "fin": "22:10"
+    },
+    {
+     "dia": 4,
+     "inicio": "20:30",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 50,
+   "ciclo": 7,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "NARRO ANDRADE MANUEL",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "18:50",
+     "fin": "20:30"
+    },
+    {
+     "dia": 4,
+     "inicio": "18:50",
+     "fin": "20:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 51,
+   "ciclo": 7,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "CARRANZA BARRENA WILFREDO E.",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "19:40",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 52,
+   "ciclo": 7,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "LIRA CAMARGO JORGE",
+   "aula": "LAB 3",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "20:30",
+     "fin": "22:10"
+    },
+    {
+     "dia": 3,
+     "inicio": "20:30",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 46,
+   "ciclo": 7,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "YUCRA SOTOMAYOR DANIEL A.",
+   "aula": "D-204",
+   "sesiones": [
+    {
+     "dia": 3,
+     "inicio": "17:10",
+     "fin": "18:50"
+    },
+    {
+     "dia": 5,
+     "inicio": "17:10",
+     "fin": "18:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 47,
+   "ciclo": 7,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "ROJAS ROMERO KARIN",
+   "aula": "D-204",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "17:10",
+     "fin": "18:50"
+    },
+    {
+     "dia": 4,
+     "inicio": "17:10",
+     "fin": "18:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 48,
+   "ciclo": 7,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "FRANCO DEL CARPIO CARLOS MIGUEL",
+   "aula": "LAB 3",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "18:50",
+     "fin": "20:30"
+    },
+    {
+     "dia": 4,
+     "inicio": "18:50",
+     "fin": "20:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 49,
+   "ciclo": 7,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "GAVINO RAMOS MARTIN SABINO",
+   "aula": "D-204",
+   "sesiones": [
+    {
+     "dia": 3,
+     "inicio": "20:30",
+     "fin": "22:10"
+    },
+    {
+     "dia": 5,
+     "inicio": "20:30",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 50,
+   "ciclo": 7,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "ROJAS ROMERO KARIN",
+   "aula": "D-204",
+   "sesiones": [
+    {
+     "dia": 3,
+     "inicio": "18:50",
+     "fin": "20:30"
+    },
+    {
+     "dia": 5,
+     "inicio": "18:50",
+     "fin": "20:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 51,
+   "ciclo": 7,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "GAMBOA CRUZADO JAVIER ARTURO",
+   "aula": "D-204",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "19:40",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 52,
+   "ciclo": 7,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "NARRO ANDRADE MANUEL",
+   "aula": "LAB 3",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "20:30",
+     "fin": "22:10"
+    },
+    {
+     "dia": 4,
+     "inicio": "20:30",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 73,
+   "ciclo": 7,
+   "seccion": "E",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "SOTOMAYOR ABARCA JULIO",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 6,
+     "inicio": "10:30",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 76,
+   "ciclo": 7,
+   "seccion": "E",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "LEZAMA GONZALES PEDRO MARTIN",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 6,
+     "inicio": "13:00",
+     "fin": "15:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 79,
+   "ciclo": 7,
+   "seccion": "E",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "VILLAFUERTE BARRETO HERNAN O.",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 6,
+     "inicio": "10:30",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 82,
+   "ciclo": 7,
+   "seccion": "E",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "SOTO SOTO LUIS",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 6,
+     "inicio": "13:00",
+     "fin": "15:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 85,
+   "ciclo": 7,
+   "seccion": "E",
+   "turno": "M",
+   "cupo": 30,
+   "docente": null,
+   "aula": "LAB 3",
+   "sesiones": [
+    {
+     "dia": 6,
+     "inicio": "10:30",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 60,
+   "ciclo": 9,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "CACHAY BOZA ORESTES",
+   "aula": "D-308",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "18:00",
+     "fin": "19:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "18:00",
+     "fin": "19:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 61,
+   "ciclo": 9,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "LEZAMA GONZALES PEDRO MARTIN",
+   "aula": "D-308",
+   "sesiones": [
+    {
+     "dia": 3,
+     "inicio": "17:10",
+     "fin": "18:50"
+    },
+    {
+     "dia": 4,
+     "inicio": "19:40",
+     "fin": "21:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 62,
+   "ciclo": 9,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "LEZAMA GONZALES PEDRO MARTIN",
+   "aula": "D-308",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "18:50",
+     "fin": "20:30"
+    },
+    {
+     "dia": 3,
+     "inicio": "18:50",
+     "fin": "20:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 63,
+   "ciclo": 9,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "CARRANZA BARRENA WILFREDO E.",
+   "aula": "D-308",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "19:40",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 64,
+   "ciclo": 9,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "GAVINO RAMOS MARTIN SABINO",
+   "aula": "D-308",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "20:30",
+     "fin": "22:10"
+    },
+    {
+     "dia": 3,
+     "inicio": "20:30",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 65,
+   "ciclo": 9,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "LOPEZ JUAREZ BERTHA BEATRIZ",
+   "aula": "D-308",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "18:50",
+     "fin": "22:10"
+    },
+    {
+     "dia": 6,
+     "inicio": "10:30",
+     "fin": "13:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 60,
+   "ciclo": 9,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "COHELLO AGUIRRE ROGELIO G.",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "18:00",
+     "fin": "19:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "18:00",
+     "fin": "19:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 61,
+   "ciclo": 9,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "APARICIO MONTENEGRO PABLO R.",
+   "aula": "LAB ELEC",
+   "sesiones": [
+    {
+     "dia": 3,
+     "inicio": "17:10",
+     "fin": "18:50"
+    },
+    {
+     "dia": 4,
+     "inicio": "19:40",
+     "fin": "21:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 62,
+   "ciclo": 9,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "SOTELO ANTAURCO SANTOS CIRIACO",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "18:50",
+     "fin": "20:30"
+    },
+    {
+     "dia": 3,
+     "inicio": "18:50",
+     "fin": "20:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 63,
+   "ciclo": 9,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "COHELLO AGUIRRE ROGELIO G.",
+   "aula": "LAB ELEC",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "19:40",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 64,
+   "ciclo": 9,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "VILLAFUERTE BARRETO HERNAN O.",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "20:30",
+     "fin": "22:10"
+    },
+    {
+     "dia": 3,
+     "inicio": "20:30",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 65,
+   "ciclo": 9,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "ALFARO BERNEDO JUAN OSWALDO",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "18:50",
+     "fin": "22:10"
+    },
+    {
+     "dia": 6,
+     "inicio": "10:30",
+     "fin": "13:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 60,
+   "ciclo": 9,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "LOPEZ JUAREZ BERTHA BEATRIZ",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "19:40",
+     "fin": "21:20"
+    },
+    {
+     "dia": 4,
+     "inicio": "19:40",
+     "fin": "21:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 61,
+   "ciclo": 9,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "CARRANZA BARRENA WILFREDO E.",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 4,
+     "inicio": "18:00",
+     "fin": "19:40"
+    },
+    {
+     "dia": 5,
+     "inicio": "17:10",
+     "fin": "18:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 62,
+   "ciclo": 9,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "COLCA GARCIA HEDDY",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "20:30",
+     "fin": "22:10"
+    },
+    {
+     "dia": 3,
+     "inicio": "20:30",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 63,
+   "ciclo": 9,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "COLCA GARCIA HEDDY",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "17:10",
+     "fin": "19:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 64,
+   "ciclo": 9,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "COHELLO AGUIRRE ROGELIO G.",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "18:50",
+     "fin": "20:30"
+    },
+    {
+     "dia": 3,
+     "inicio": "18:50",
+     "fin": "20:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-1",
+   "id_curso_malla": 65,
+   "ciclo": 9,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "CACHAY BOZA ORESTES",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "18:50",
+     "fin": "22:10"
+    },
+    {
+     "dia": 6,
+     "inicio": "10:30",
+     "fin": "13:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 9,
+   "ciclo": 2,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "SALAZAR DEZA CARMEN",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "10:30",
+     "fin": "12:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 10,
+   "ciclo": 2,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "MUJICA RUIZ OSCAR HUGO",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "08:00",
+     "fin": "09:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "08:00",
+     "fin": "09:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 11,
+   "ciclo": 2,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "VALES CARRILLO JORGE ALBERTO",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "11:20",
+     "fin": "13:00"
+    },
+    {
+     "dia": 3,
+     "inicio": "11:20",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 12,
+   "ciclo": 2,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "PETRLIK AZABACHE IVAN CARLO",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "11:20",
+     "fin": "13:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 13,
+   "ciclo": 2,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "LEON VELARDE CESAR GERARDO",
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 4,
+     "inicio": "11:20",
+     "fin": "13:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 14,
+   "ciclo": 2,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "MUJICA RUIZ OSCAR HUGO",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "09:40",
+     "fin": "11:20"
+    },
+    {
+     "dia": 4,
+     "inicio": "09:40",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 15,
+   "ciclo": 2,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "HENRY ROJAS CARRETERO",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "08:00",
+     "fin": "09:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "08:00",
+     "fin": "09:40"
+    },
+    {
+     "dia": 5,
+     "inicio": "07:00",
+     "fin": "09:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 16,
+   "ciclo": 2,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "PETRLIK AZABACHE IVAN CARLO",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "09:40",
+     "fin": "11:20"
+    },
+    {
+     "dia": 3,
+     "inicio": "09:40",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 9,
+   "ciclo": 2,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "SALAZAR DEZA CARMEN",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "12:10",
+     "fin": "13:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 10,
+   "ciclo": 2,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "LEON VELARDE CESAR GERARDO",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "08:00",
+     "fin": "09:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "08:00",
+     "fin": "09:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 11,
+   "ciclo": 2,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "MUJICA RUIZ OSCAR HUGO",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "11:20",
+     "fin": "13:00"
+    },
+    {
+     "dia": 3,
+     "inicio": "11:20",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 12,
+   "ciclo": 2,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "COLCA GARCIA HEDDY",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "11:20",
+     "fin": "13:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 13,
+   "ciclo": 2,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "SALAZAR DEZA CARMEN",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 4,
+     "inicio": "11:20",
+     "fin": "13:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 14,
+   "ciclo": 2,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "MAYHUASCA GUERRA JORGE VICTOR",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "09:40",
+     "fin": "11:20"
+    },
+    {
+     "dia": 4,
+     "inicio": "09:40",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 15,
+   "ciclo": 2,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "HENRY ROJAS CARRETERO",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "09:40",
+     "fin": "11:20"
+    },
+    {
+     "dia": 3,
+     "inicio": "09:40",
+     "fin": "11:20"
+    },
+    {
+     "dia": 5,
+     "inicio": "09:40",
+     "fin": "12:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 16,
+   "ciclo": 2,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 35,
+   "docente": "ROJAS ROMERO KARIN",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "08:00",
+     "fin": "09:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "08:00",
+     "fin": "09:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 9,
+   "ciclo": 2,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 35,
+   "docente": "SALAZAR DEZA CARMEN",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "14:40",
+     "fin": "16:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 10,
+   "ciclo": 2,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 35,
+   "docente": "SOTOMAYOR ABARCA JULIO ELMER",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "13:00",
+     "fin": "14:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "13:00",
+     "fin": "14:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 11,
+   "ciclo": 2,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 35,
+   "docente": "SALAZAR DEZA CARMEN",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 3,
+     "inicio": "11:20",
+     "fin": "13:00"
+    },
+    {
+     "dia": 5,
+     "inicio": "16:20",
+     "fin": "18:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 12,
+   "ciclo": 2,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 35,
+   "docente": "NARRO ANDRADE MANUEL",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "16:20",
+     "fin": "18:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 13,
+   "ciclo": 2,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 35,
+   "docente": "VALES CARRILLO JORGE ALBERTO",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 4,
+     "inicio": "16:20",
+     "fin": "18:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 14,
+   "ciclo": 2,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 35,
+   "docente": "ALFARO BERNEDO JUAN OSWALDO",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "14:40",
+     "fin": "16:20"
+    },
+    {
+     "dia": 4,
+     "inicio": "14:40",
+     "fin": "16:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 15,
+   "ciclo": 2,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 35,
+   "docente": "LUIS SULLCA ACUÑA",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "13:00",
+     "fin": "14:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "13:00",
+     "fin": "14:40"
+    },
+    {
+     "dia": 5,
+     "inicio": "12:10",
+     "fin": "14:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 16,
+   "ciclo": 2,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 35,
+   "docente": "HUAPAYA SOTERO ARMANDO RICARDO",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "14:40",
+     "fin": "16:20"
+    },
+    {
+     "dia": 3,
+     "inicio": "14:40",
+     "fin": "16:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 25,
+   "ciclo": 4,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "HUAPAYA SOTERO ARMANDO RICARDO",
+   "aula": "LAB 3",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "10:30",
+     "fin": "13:00"
+    },
+    {
+     "dia": 4,
+     "inicio": "10:30",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 26,
+   "ciclo": 4,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "ALVARADO ALVARADO JOSE ORLANDO",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "12:10",
+     "fin": "13:50"
+    },
+    {
+     "dia": 5,
+     "inicio": "08:00",
+     "fin": "09:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 27,
+   "ciclo": 4,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "VILCA SANCHEZ YONILN LINCOLN",
+   "aula": "LAB 3",
+   "sesiones": [
+    {
+     "dia": 4,
+     "inicio": "13:50",
+     "fin": "17:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 28,
+   "ciclo": 4,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "ALVARADO ALVARADO JOSE ORLANDO",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "09:40",
+     "fin": "12:10"
+    },
+    {
+     "dia": 3,
+     "inicio": "09:40",
+     "fin": "12:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 29,
+   "ciclo": 4,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "HERIBERTO MAGALLANES VILLAVERDE",
+   "aula": "LAB ELEC",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "08:00",
+     "fin": "10:30"
+    },
+    {
+     "dia": 4,
+     "inicio": "08:00",
+     "fin": "10:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 30,
+   "ciclo": 4,
+   "seccion": "A",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "CANO ESPADA JAIME",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "07:10",
+     "fin": "09:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "07:10",
+     "fin": "09:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 25,
+   "ciclo": 4,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "APARICIO MONTENEGRO PABLO R.",
+   "aula": "LAB 3",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "08:00",
+     "fin": "10:30"
+    },
+    {
+     "dia": 4,
+     "inicio": "08:00",
+     "fin": "10:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 26,
+   "ciclo": 4,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "GABRIEL MORENO BARTOLOME",
+   "aula": "D-204",
+   "sesiones": [
+    {
+     "dia": 3,
+     "inicio": "12:10",
+     "fin": "13:50"
+    },
+    {
+     "dia": 5,
+     "inicio": "09:40",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 27,
+   "ciclo": 4,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "VILCA SANCHEZ YONILN LINCOLN",
+   "aula": "LAB 3",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "13:00",
+     "fin": "16:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 28,
+   "ciclo": 4,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "COLCA GARCIA HEDDY",
+   "aula": "D-204",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "07:10",
+     "fin": "09:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "07:10",
+     "fin": "09:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 29,
+   "ciclo": 4,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "HERIBERTO MAGALLANES VILLAVERDE",
+   "aula": "LAB ELEC",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "10:30",
+     "fin": "13:00"
+    },
+    {
+     "dia": 4,
+     "inicio": "10:30",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 30,
+   "ciclo": 4,
+   "seccion": "B",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "CANO ESPADA JAIME",
+   "aula": "D-204",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "09:40",
+     "fin": "12:10"
+    },
+    {
+     "dia": 3,
+     "inicio": "09:40",
+     "fin": "12:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 25,
+   "ciclo": 4,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "PETRLIK AZABACHE IVAN CARLO",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "15:30",
+     "fin": "18:00"
+    },
+    {
+     "dia": 5,
+     "inicio": "16:20",
+     "fin": "18:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 26,
+   "ciclo": 4,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "OGOSI AUQUI JOSE ANTONIO",
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "17:10",
+     "fin": "18:50"
+    },
+    {
+     "dia": 5,
+     "inicio": "14:40",
+     "fin": "16:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 27,
+   "ciclo": 4,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "MICHUE SALGUEDO EFREN S.",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 3,
+     "inicio": "17:10",
+     "fin": "18:50"
+    },
+    {
+     "dia": 4,
+     "inicio": "16:20",
+     "fin": "18:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 28,
+   "ciclo": 4,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "COLCA GARCIA HEDDY",
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "14:40",
+     "fin": "17:10"
+    },
+    {
+     "dia": 3,
+     "inicio": "14:40",
+     "fin": "17:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 29,
+   "ciclo": 4,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 30,
+   "docente": null,
+   "aula": "LAB ELEC",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "13:00",
+     "fin": "15:30"
+    },
+    {
+     "dia": 4,
+     "inicio": "13:00",
+     "fin": "15:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 30,
+   "ciclo": 4,
+   "seccion": "C",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "QUINTO MEDINA",
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "12:10",
+     "fin": "14:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "12:10",
+     "fin": "14:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 39,
+   "ciclo": 6,
+   "seccion": "A",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "HUAPAYA SOTERO ARMANDO RICARDO",
+   "aula": "LAB 3",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "14:40",
+     "fin": "18:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 40,
+   "ciclo": 6,
+   "seccion": "A",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "ALVARADO ALVARADO JOSE ORLANDO",
+   "aula": "D-204",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "14:40",
+     "fin": "16:20"
+    },
+    {
+     "dia": 4,
+     "inicio": "14:40",
+     "fin": "16:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 41,
+   "ciclo": 6,
+   "seccion": "A",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "MUÑOZ RAMOS LUIS AVELINO",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "13:00",
+     "fin": "15:30"
+    },
+    {
+     "dia": 3,
+     "inicio": "13:00",
+     "fin": "15:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 42,
+   "ciclo": 6,
+   "seccion": "A",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "SOTELO ANTAURCO SANTOS CIRIACO",
+   "aula": "D-204",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "16:20",
+     "fin": "18:00"
+    },
+    {
+     "dia": 4,
+     "inicio": "16:20",
+     "fin": "18:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 43,
+   "ciclo": 6,
+   "seccion": "A",
+   "turno": "T",
+   "cupo": 30,
+   "docente": null,
+   "aula": "LAB 3",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "15:30",
+     "fin": "18:00"
+    },
+    {
+     "dia": 3,
+     "inicio": "15:30",
+     "fin": "18:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 44,
+   "ciclo": 6,
+   "seccion": "A",
+   "turno": "T",
+   "cupo": 30,
+   "docente": "OGOSI AUQUI JOSE ANTONIO",
+   "aula": "LAB 3",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "13:00",
+     "fin": "14:40"
+    },
+    {
+     "dia": 5,
+     "inicio": "13:00",
+     "fin": "14:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 39,
+   "ciclo": 6,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "LEZAMA GONZALES PEDRO MARTIN",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 6,
+     "inicio": "08:00",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 40,
+   "ciclo": 6,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "SOTOMAYOR ABARCA JULIO ELMER",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "20:30",
+     "fin": "22:10"
+    },
+    {
+     "dia": 4,
+     "inicio": "20:30",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 41,
+   "ciclo": 6,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "SOTO SOTO LUIS",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "17:10",
+     "fin": "19:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "17:10",
+     "fin": "19:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 42,
+   "ciclo": 6,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "YUCRA SOTOMAYOR DANIEL A.",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "18:50",
+     "fin": "20:30"
+    },
+    {
+     "dia": 4,
+     "inicio": "18:50",
+     "fin": "20:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 43,
+   "ciclo": 6,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": null,
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "19:40",
+     "fin": "22:10"
+    },
+    {
+     "dia": 3,
+     "inicio": "19:40",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 44,
+   "ciclo": 6,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "ROJAS ROMERO KAREN",
+   "aula": "LAB 3",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "17:10",
+     "fin": "18:50"
+    },
+    {
+     "dia": 4,
+     "inicio": "17:10",
+     "fin": "18:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 39,
+   "ciclo": 6,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "LEZAMA GONZALES PEDRO MARTIN",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 6,
+     "inicio": "08:00",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 40,
+   "ciclo": 6,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": null,
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "18:50",
+     "fin": "20:30"
+    },
+    {
+     "dia": 4,
+     "inicio": "18:50",
+     "fin": "20:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 41,
+   "ciclo": 6,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "ROJAS ROMERO KAREN",
+   "aula": "LAB 4",
+   "sesiones": [
+    {
+     "dia": 3,
+     "inicio": "17:10",
+     "fin": "18:50"
+    },
+    {
+     "dia": 6,
+     "inicio": "08:00",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 42,
+   "ciclo": 6,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "FRANCO DEL CARPIO CARLOS MIGUEL",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "20:30",
+     "fin": "22:10"
+    },
+    {
+     "dia": 4,
+     "inicio": "20:30",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 43,
+   "ciclo": 6,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "VALES CARRILLO JORGE ALBERTO",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "17:10",
+     "fin": "19:40"
+    },
+    {
+     "dia": 6,
+     "inicio": "11:20",
+     "fin": "13:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 44,
+   "ciclo": 6,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "SOTOMAYOR ABARCA JULIO ELMER",
+   "aula": "LAB 4",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "17:10",
+     "fin": "18:50"
+    },
+    {
+     "dia": 4,
+     "inicio": "17:10",
+     "fin": "18:50"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 72,
+   "ciclo": 6,
+   "seccion": "E",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "YUCRA SOTOMAYOR DANIEL A.",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 6,
+     "inicio": "10:30",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 75,
+   "ciclo": 6,
+   "seccion": "E",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "APARICIO MONTENEGRO PABLO R.",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 6,
+     "inicio": "13:50",
+     "fin": "16:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 78,
+   "ciclo": 6,
+   "seccion": "E",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "YUCRA SOTOMAYOR DANIEL A.",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 6,
+     "inicio": "10:30",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 81,
+   "ciclo": 6,
+   "seccion": "E",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "OGOSI AUQUI JOSE ANTONIO",
+   "aula": "LAB 2",
+   "sesiones": [
+    {
+     "dia": 6,
+     "inicio": "13:00",
+     "fin": "15:30"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 84,
+   "ciclo": 6,
+   "seccion": "E",
+   "turno": "M",
+   "cupo": 30,
+   "docente": "ROJAS ROMERO KARIN",
+   "aula": "LAB 3",
+   "sesiones": [
+    {
+     "dia": 6,
+     "inicio": "10:30",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 54,
+   "ciclo": 8,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "CACHAY BOZA ORESTES",
+   "aula": "D-204",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "19:40",
+     "fin": "21:20"
+    },
+    {
+     "dia": 4,
+     "inicio": "19:40",
+     "fin": "21:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 55,
+   "ciclo": 8,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": null,
+   "aula": "LAB 5",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "18:00",
+     "fin": "19:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "18:00",
+     "fin": "19:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 56,
+   "ciclo": 8,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "VILLAFUERTE BARRETO HERNAN O.",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "19:40",
+     "fin": "22:10"
+    },
+    {
+     "dia": 3,
+     "inicio": "19:40",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 57,
+   "ciclo": 8,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "FRANCO DEL CARPIO CARLOS MIGUEL",
+   "aula": "B-505",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "18:00",
+     "fin": "19:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "18:00",
+     "fin": "19:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 58,
+   "ciclo": 8,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "VILLAFUERTE BARRETO HERNAN O.",
+   "aula": "LAB 4",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "19:40",
+     "fin": "21:20"
+    },
+    {
+     "dia": 6,
+     "inicio": "11:20",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 59,
+   "ciclo": 8,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "APARICIO MONTENEGRO PABLO R.",
+   "aula": "LAB 4",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "18:00",
+     "fin": "19:40"
+    },
+    {
+     "dia": 6,
+     "inicio": "09:40",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 54,
+   "ciclo": 8,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": null,
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "19:40",
+     "fin": "21:20"
+    },
+    {
+     "dia": 4,
+     "inicio": "19:40",
+     "fin": "21:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 55,
+   "ciclo": 8,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "LEZAMA GONZALES PEDRO MARTIN",
+   "aula": "LAB 1",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "18:00",
+     "fin": "19:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "18:00",
+     "fin": "19:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 56,
+   "ciclo": 8,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "GAMBOA CRUZADO JAVIER ARTURO",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "19:40",
+     "fin": "22:10"
+    },
+    {
+     "dia": 3,
+     "inicio": "19:40",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 57,
+   "ciclo": 8,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "LEZAMA GONZALES PEDRO MARTIN",
+   "aula": "D-203",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "18:00",
+     "fin": "19:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "18:00",
+     "fin": "19:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 58,
+   "ciclo": 8,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "NARRO ANDRADE MANUEL",
+   "aula": "LAB 5",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "19:40",
+     "fin": "21:20"
+    },
+    {
+     "dia": 6,
+     "inicio": "11:20",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 59,
+   "ciclo": 8,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "SOTELO ANTAURCO SANTOS CIRIACO",
+   "aula": "LAB 5",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "18:00",
+     "fin": "19:40"
+    },
+    {
+     "dia": 6,
+     "inicio": "09:40",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 54,
+   "ciclo": 8,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "ACEVEDO BORREGO ADOLFO O.",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "19:40",
+     "fin": "21:20"
+    },
+    {
+     "dia": 4,
+     "inicio": "19:40",
+     "fin": "21:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 55,
+   "ciclo": 8,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "FRANCO DEL CARPIO CARLOS MIGUEL",
+   "aula": "LAB 6",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "18:00",
+     "fin": "19:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "18:00",
+     "fin": "19:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 56,
+   "ciclo": 8,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "COLCA GARCIA HEDDY",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "19:40",
+     "fin": "22:10"
+    },
+    {
+     "dia": 3,
+     "inicio": "19:40",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 57,
+   "ciclo": 8,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "GAVINO RAMOS MARTIN SABINO",
+   "aula": "B-504",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "18:00",
+     "fin": "19:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "18:00",
+     "fin": "19:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 58,
+   "ciclo": 8,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "COHELLO AGUIRRE ROGELIO G.",
+   "aula": "LAB 6",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "19:40",
+     "fin": "21:20"
+    },
+    {
+     "dia": 6,
+     "inicio": "11:20",
+     "fin": "13:00"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 59,
+   "ciclo": 8,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "NARRO ANDRADE MANUEL",
+   "aula": "LAB 6",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "18:00",
+     "fin": "19:40"
+    },
+    {
+     "dia": 6,
+     "inicio": "09:40",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 66,
+   "ciclo": 10,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "SOTELO ANTAURCO SANTOS CIRIACO",
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "19:40",
+     "fin": "21:20"
+    },
+    {
+     "dia": 4,
+     "inicio": "19:40",
+     "fin": "21:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 67,
+   "ciclo": 10,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "YUCRA SOTOMAYOR DANIEL A.",
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "19:40",
+     "fin": "22:10"
+    },
+    {
+     "dia": 3,
+     "inicio": "19:40",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 68,
+   "ciclo": 10,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "LIRA CAMARGO JORGE",
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "18:00",
+     "fin": "19:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "18:00",
+     "fin": "19:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 69,
+   "ciclo": 10,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": null,
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "18:00",
+     "fin": "19:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "18:00",
+     "fin": "19:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 70,
+   "ciclo": 10,
+   "seccion": "A",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "CACHAY BOZA ORESTES",
+   "aula": "B-503",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "18:50",
+     "fin": "22:10"
+    },
+    {
+     "dia": 6,
+     "inicio": "08:00",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 66,
+   "ciclo": 10,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": null,
+   "aula": "D-308",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "18:00",
+     "fin": "19:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "18:00",
+     "fin": "19:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 67,
+   "ciclo": 10,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "COHELLO AGUIRRE ROGELIO G.",
+   "aula": "D-308",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "19:40",
+     "fin": "22:10"
+    },
+    {
+     "dia": 3,
+     "inicio": "19:40",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 68,
+   "ciclo": 10,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": null,
+   "aula": "D-308",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "19:40",
+     "fin": "21:20"
+    },
+    {
+     "dia": 4,
+     "inicio": "19:40",
+     "fin": "21:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 69,
+   "ciclo": 10,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "VILLAFUERTE BARRETO HERNAN O.",
+   "aula": "D-308",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "18:00",
+     "fin": "19:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "18:00",
+     "fin": "19:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 70,
+   "ciclo": 10,
+   "seccion": "B",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "GAVINO RAMOS MARTIN SABINO",
+   "aula": "D-308",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "18:50",
+     "fin": "22:10"
+    },
+    {
+     "dia": 6,
+     "inicio": "08:00",
+     "fin": "11:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 66,
+   "ciclo": 10,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "COHELLO AGUIRRE ROGELIO G.",
+   "aula": "LAB ELEC",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "19:40",
+     "fin": "21:20"
+    },
+    {
+     "dia": 4,
+     "inicio": "19:40",
+     "fin": "21:20"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 67,
+   "ciclo": 10,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "GAVINO RAMOS MARTIN SABINO",
+   "aula": "LAB ELEC",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "19:40",
+     "fin": "22:10"
+    },
+    {
+     "dia": 3,
+     "inicio": "19:40",
+     "fin": "22:10"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 68,
+   "ciclo": 10,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "ACEVEDO BORREGO ADOLFO O.",
+   "aula": "LAB ELEC",
+   "sesiones": [
+    {
+     "dia": 2,
+     "inicio": "18:00",
+     "fin": "19:40"
+    },
+    {
+     "dia": 4,
+     "inicio": "18:00",
+     "fin": "19:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 69,
+   "ciclo": 10,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "LIRA CAMARGO JORGE",
+   "aula": "LAB ELEC",
+   "sesiones": [
+    {
+     "dia": 1,
+     "inicio": "18:00",
+     "fin": "19:40"
+    },
+    {
+     "dia": 3,
+     "inicio": "18:00",
+     "fin": "19:40"
+    }
+   ]
+  },
+  {
+   "periodo": "2026-2",
+   "id_curso_malla": 70,
+   "ciclo": 10,
+   "seccion": "C",
+   "turno": "N",
+   "cupo": 30,
+   "docente": "LOPEZ JUAREZ BERTHA BEATRIZ",
+   "aula": "LAB ELEC",
+   "sesiones": [
+    {
+     "dia": 5,
+     "inicio": "18:50",
+     "fin": "22:10"
+    },
+    {
+     "dia": 6,
+     "inicio": "08:00",
+     "fin": "11:20"
+    }
+   ]
+  }
+ ]
+}

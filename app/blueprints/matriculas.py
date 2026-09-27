@@ -1,18 +1,11 @@
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy import select
+
+from ..academico import calcular_notas, notas_detalle, purgar_carritos_vencidos, redondear, validar_secciones
 from ..errors import ApiError
 from ..extensions import db
-from ..models import (
-    Alumno,
-    Curso,
-    HorarioCab,
-    HorarioDCSeccion,
-    Matricula,
-    MatriculaDetalle,
-    MezclaCurso,
-    PeriodoAcademico,
-)
+from ..models import Alumno, CarritoItem, HorarioDCSeccion, Matricula, MatriculaDetalle, PeriodoAcademico
 from ..security import admin_required, require_self_or_admin
 
 bp = Blueprint("matriculas", __name__)
@@ -22,54 +15,21 @@ def _assert_owner(cod_alumno):
     require_self_or_admin(cod_alumno, "Solo puede operar sobre su propia matrícula.")
 
 
-def _approved_course_ids(cod_alumno):
-    """Courses that can satisfy a prerequisite for an enrollment.
-
-    A recorded passing grade is the academic outcome that matters here.  The
-    previous implementation also required the source period to be marked as
-    closed, which left a student blocked even after the final grade had been
-    entered for that course.
-    """
-    grade = current_app.config["PASSING_GRADE"]
-    rows = (
-        db.session.query(HorarioCab.corr_pe, HorarioDCSeccion.cod_curso)
-        .select_from(MatriculaDetalle)
-        .join(Matricula, Matricula.nro_matricula == MatriculaDetalle.nro_matricula)
-        .join(HorarioDCSeccion, HorarioDCSeccion.id_seccion == MatriculaDetalle.id_seccion)
-        .join(HorarioCab, HorarioDCSeccion.id_horario == HorarioCab.id_horario)
-        .filter(
-            Matricula.cod_alumno == cod_alumno,
-            Matricula.estado == "confirmada",
-            MatriculaDetalle.estado == "matriculado",
-            MatriculaDetalle.nota_final >= grade,
-        )
-        .all()
-    )
-    return {corr * 1000 + cod for corr, cod in rows}
-
-
-def _conflicts(first, second):
-    return (
-        first.dia_teoria == second.dia_teoria
-        and first.hora_inicio < second.hora_fin
-        and second.hora_inicio < first.hora_fin
-    )
-
-
-def _serialize_enrollment(matricula):
-    passing_grade = current_app.config["PASSING_GRADE"]
-    detalles_list = []
+def serialize_enrollment(matricula):
+    passing = current_app.config["PASSING_GRADE"]
+    detalles = []
     for detail in matricula.detalles:
         sec = detail.seccion
         curso_dict = sec.curso.to_dict() if (sec and sec.curso) else None
-        academic_status = detail.estado
-        if detail.estado == "matriculado" and detail.nota_final is not None:
-            academic_status = "aprobado" if float(detail.nota_final) >= passing_grade else "desaprobado"
-        detalles_list.append({
+        notas = notas_detalle(detail)
+        academic = detail.estado
+        if detail.estado == "matriculado" and notas["nota_final"] is not None:
+            academic = "aprobado" if notas["nota_final"] >= passing else "desaprobado"
+        detalles.append({
             "id": detail.id,
             "estado": detail.estado,
-            "estado_academico": academic_status,
-            "nota_final": float(detail.nota_final) if detail.nota_final is not None else None,
+            "estado_academico": academic,
+            **notas,
             "seccion": sec.to_dict(curso_dict=curso_dict) if sec else None,
         })
     return {
@@ -77,112 +37,79 @@ def _serialize_enrollment(matricula):
         "cod_alumno": matricula.cod_alumno,
         "periodo": matricula.periodo.to_dict(),
         "estado": matricula.estado,
+        "fecha_matricula": matricula.fecha_matricula.isoformat() if matricula.fecha_matricula else None,
         "monto_pagado": float(matricula.monto_pagado),
-        "detalles": detalles_list,
+        "detalles": detalles,
     }
+
+
+def secciones_activas(matricula):
+    if not matricula:
+        return []
+    return [d.seccion for d in matricula.detalles if d.estado == "matriculado" and d.seccion]
+
+
+def matricular(alumno, periodo, ids):
+    """Registra las secciones indicadas (validación completa con bloqueo de filas)."""
+    if alumno.estado != "activo":
+        raise ApiError("alumno_no_activo", "El alumno no está habilitado para matricularse.", 403)
+    if len(ids) != len(set(ids)) or not all(isinstance(i, int) for i in ids) or not ids:
+        raise ApiError("secciones_invalidas", "Las secciones deben ser identificadores enteros no repetidos.", 400)
+    try:
+        secciones = (
+            db.session.execute(select(HorarioDCSeccion).where(HorarioDCSeccion.id_seccion.in_(ids)).with_for_update())
+            .scalars()
+            .all()
+        )
+        if len(secciones) != len(ids):
+            raise ApiError("seccion_no_encontrada", "Una o más secciones no existen.", 404)
+
+        matricula = Matricula.query.filter_by(cod_alumno=alumno.cod_alumno, id_periodo=periodo.unique_id).with_for_update().first()
+        if matricula and matricula.estado == "anulada":
+            raise ApiError("matricula_anulada", "La matrícula existente está anulada y no puede modificarse.", 409)
+        existentes = secciones_activas(matricula)
+        repetidas = {s.id_seccion for s in existentes} & set(ids)
+        if repetidas:
+            raise ApiError("curso_duplicado", "Una de las secciones ya está en tu matrícula.", 409)
+
+        validar_secciones(alumno, periodo, secciones, existentes)
+
+        if not matricula:
+            matricula = Matricula(cod_alumno=alumno.cod_alumno, id_periodo=periodo.unique_id, estado="confirmada", monto_pagado=0)
+            db.session.add(matricula)
+            db.session.flush()
+        for s in secciones:
+            previo = MatriculaDetalle.query.filter_by(nro_matricula=matricula.nro_matricula, id_seccion=s.id_seccion).first()
+            if previo:  # un retiro previo de la misma sección se reactiva
+                previo.estado = "matriculado"
+            else:
+                db.session.add(MatriculaDetalle(nro_matricula=matricula.nro_matricula, id_seccion=s.id_seccion, estado="matriculado"))
+        CarritoItem.query.filter(
+            CarritoItem.cod_alumno == alumno.cod_alumno,
+            CarritoItem.id_periodo == periodo.unique_id,
+            CarritoItem.id_seccion.in_(ids),
+        ).delete(synchronize_session=False)
+        db.session.commit()
+    except ApiError:
+        db.session.rollback()
+        raise
+    db.session.refresh(matricula)
+    return matricula
 
 
 @bp.post("/matriculas")
 @jwt_required()
 def create_enrollment():
     data = request.get_json(silent=True) or {}
-    cod_alumno, id_periodo, raw_ids = data.get("cod_alumno"), data.get("id_periodo"), data.get("secciones")
-    if not cod_alumno or not isinstance(id_periodo, int) or not isinstance(raw_ids, list) or not raw_ids:
-        raise ApiError("datos_invalidos", "Se requieren cod_alumno, id_periodo y una lista no vacía de secciones.", 400)
+    cod_alumno, id_periodo, ids = data.get("cod_alumno"), data.get("id_periodo"), data.get("secciones")
+    if not cod_alumno or not isinstance(id_periodo, int) or not isinstance(ids, list):
+        raise ApiError("datos_invalidos", "Se requieren cod_alumno, id_periodo y una lista de secciones.", 400)
     _assert_owner(cod_alumno)
-    if len(raw_ids) != len(set(raw_ids)) or not all(isinstance(item, int) for item in raw_ids):
-        raise ApiError("secciones_invalidas", "Las secciones deben ser identificadores enteros no repetidos.", 400)
-
     alumno = db.get_or_404(Alumno, cod_alumno)
-    if alumno.estado != "activo":
-        raise ApiError("alumno_no_activo", "El alumno no está habilitado para matricularse.", 403)
-
-    periodo = PeriodoAcademico.query.filter_by(unique_id=id_periodo).first_or_404()
-    if periodo.estado != "en_curso":
-        raise ApiError("periodo_no_disponible", "Solo se permite matrícula en períodos en curso.", 409)
-
-    try:
-        locked_sections = (
-            db.session.execute(
-                select(HorarioDCSeccion).where(HorarioDCSeccion.id_seccion.in_(raw_ids)).with_for_update()
-            )
-            .scalars()
-            .all()
-        )
-        if len(locked_sections) != len(raw_ids):
-            raise ApiError("seccion_no_encontrada", "Una o más secciones no existen.", 404)
-
-        for section in locked_sections:
-            cabecera = section.curso_programado.horario_det.cabecera if (section.curso_programado and section.curso_programado.horario_det) else None
-            if not cabecera or cabecera.cod_per_acad != periodo.cod_per_acad:
-                raise ApiError("seccion_periodo_invalido", "Una sección no pertenece al período indicado.", 400)
-            if cabecera.corr_pe != alumno.corr_pe:
-                raise ApiError("plan_incompatible", "La asignatura no pertenece al plan curricular del alumno.", 409)
-            if section.cupo_disponible <= 0:
-                raise ApiError("cupo_agotado", f"No hay vacantes en la sección {section.cod_seccion}.", 409)
-
-        for index, section in enumerate(locked_sections):
-            if any(_conflicts(section, other) for other in locked_sections[index + 1 :]):
-                raise ApiError("cruce_horario", "Las secciones seleccionadas tienen cruce de horario entre sí.", 409)
-
-        approved = _approved_course_ids(cod_alumno)
-        for section in locked_sections:
-            course_id = alumno.corr_pe * 1000 + section.cod_curso
-            if course_id in approved:
-                nombre = section.curso.den_curso if section.curso else "la asignatura"
-                raise ApiError("curso_ya_aprobado", f"El curso {nombre} ya fue aprobado y no requiere una nueva matrícula.", 409)
-            prereqs = MezclaCurso.query.filter_by(
-                cod_fac=alumno.cod_fac,
-                cod_esc=alumno.cod_esc,
-                corr_pe=alumno.corr_pe,
-                cod_curso=section.cod_curso,
-            ).all()
-            required_ids = {alumno.corr_pe * 1000 + m.cod_curso_prerequisito for m in prereqs}
-            missing = required_ids - approved
-            if missing:
-                nombre = section.curso.den_curso if section.curso else "la asignatura"
-                raise ApiError("prerrequisito_pendiente", f"No aprobó todos los prerrequisitos de {nombre}.", 409)
-
-        matricula = Matricula.query.filter_by(cod_alumno=cod_alumno, id_periodo=id_periodo).with_for_update().first()
-        if matricula and matricula.estado == "anulada":
-            raise ApiError("matricula_anulada", "La matrícula existente está anulada y no puede modificarse.", 409)
-
-        existing = [] if not matricula else [detail for detail in matricula.detalles if detail.estado == "matriculado"]
-        existing_course_codes = {detail.seccion.cod_curso for detail in existing if detail.seccion}
-        for section in locked_sections:
-            if section.cod_curso in existing_course_codes:
-                nombre = section.curso.den_curso if section.curso else "la asignatura"
-                raise ApiError("curso_duplicado", f"El curso {nombre} ya está matriculado en este período.", 409)
-            if any(_conflicts(section, detail.seccion) for detail in existing if detail.seccion):
-                nombre = section.curso.den_curso if section.curso else "la asignatura"
-                raise ApiError("cruce_horario", f"{nombre} se cruza con una sección ya matriculada.", 409)
-
-        max_credits = current_app.config["MAX_CREDITS"]
-        current_credits = sum(float(d.seccion.curso.cred) for d in existing if d.seccion and d.seccion.curso)
-        new_credits = sum(float(s.curso.cred) for s in locked_sections if s.curso)
-        if current_credits + new_credits > max_credits:
-            raise ApiError(
-                "tope_creditos",
-                f"Se supera el tope de {max_credits:g} créditos (ya tiene {current_credits:g} y agrega {new_credits:g}).",
-                409,
-            )
-
-        if not matricula:
-            matricula = Matricula(cod_alumno=cod_alumno, id_periodo=id_periodo, estado="confirmada", monto_pagado=0)
-            db.session.add(matricula)
-            db.session.flush()
-
-        for section in locked_sections:
-            section.cupo_disponible -= 1
-            db.session.add(
-                MatriculaDetalle(nro_matricula=matricula.nro_matricula, id_seccion=section.id_seccion, estado="matriculado")
-            )
-        db.session.commit()
-    except ApiError:
-        db.session.rollback()
-        raise
-
-    return jsonify(matricula=_serialize_enrollment(matricula)), 201
+    periodo = db.get_or_404(PeriodoAcademico, id_periodo)
+    purgar_carritos_vencidos()
+    matricula = matricular(alumno, periodo, ids)
+    return jsonify(matricula=serialize_enrollment(matricula)), 201
 
 
 @bp.get("/matriculas/<cod_alumno>")
@@ -193,9 +120,8 @@ def current_enrollment(cod_alumno):
     if not id_periodo:
         raise ApiError("periodo_requerido", "El parámetro periodo es obligatorio.", 400)
     matricula = Matricula.query.filter_by(cod_alumno=cod_alumno, id_periodo=id_periodo).first()
-    if not matricula:
-        raise ApiError("matricula_no_encontrada", "El alumno no tiene matrícula en el período solicitado.", 404)
-    return jsonify(matricula=_serialize_enrollment(matricula))
+    # 200 con null: "sin matrícula" es un estado normal, no un error
+    return jsonify(matricula=serialize_enrollment(matricula) if matricula else None)
 
 
 @bp.delete("/matriculas/<int:nro_matricula>/detalle/<int:id_seccion>")
@@ -212,49 +138,38 @@ def withdraw_course(nro_matricula, id_seccion):
     )
     if not detail:
         raise ApiError("detalle_no_encontrado", "No existe una matrícula activa para esa sección.", 404)
-    if detail.nota_final is not None:
-        raise ApiError("retiro_no_disponible", "No puede retirar un curso que ya tiene una nota registrada.", 409)
-    section = HorarioDCSeccion.query.filter_by(id_seccion=id_seccion).with_for_update().one()
+    if detail.nota_final is not None or any(v is not None for v in (detail.n1, detail.n2, detail.n3)):
+        raise ApiError("retiro_no_disponible", "No puede retirar un curso que ya tiene notas registradas.", 409)
     detail.estado = "retirado"
-    section.cupo_disponible += 1
     db.session.commit()
-    return jsonify(message="Curso retirado correctamente.", matricula=_serialize_enrollment(matricula))
+    return jsonify(message="Curso retirado correctamente.", matricula=serialize_enrollment(matricula))
 
 
 @bp.patch("/matriculas/<int:nro_matricula>/detalle/<int:id_seccion>/nota")
 @admin_required
 def record_grade(nro_matricula, id_seccion):
-    """Registra o corrige una nota final (solo administrador)."""
+    """Registra o corrige notas (N1, N2, N3, sustitutorio, aplazado o nota final directa)."""
     db.get_or_404(Matricula, nro_matricula)
     data = request.get_json(silent=True) or {}
-    nota_final = data.get("nota_final")
-    if isinstance(nota_final, bool) or not isinstance(nota_final, (int, float)):
-        raise ApiError("nota_invalida", "La nota final debe ser un número entre 0 y 20.", 400)
-    if not 0 <= nota_final <= 20:
-        raise ApiError("nota_fuera_de_rango", "La nota final debe estar entre 0 y 20.", 400)
-
+    notas = calcular_notas(data)
     detail = (
-        MatriculaDetalle.query.filter_by(
-            nro_matricula=nro_matricula,
-            id_seccion=id_seccion,
-            estado="matriculado",
-        )
+        MatriculaDetalle.query.filter_by(nro_matricula=nro_matricula, id_seccion=id_seccion, estado="matriculado")
         .with_for_update()
         .first()
     )
     if not detail:
         raise ApiError("detalle_no_encontrado", "No existe una matrícula activa para esa sección.", 404)
-
-    detail.nota_final = round(float(nota_final), 2)
+    for campo in ("n1", "n2", "n3", "sustitutorio", "aplazado", "nota_final"):
+        setattr(detail, campo, notas[campo])
     db.session.commit()
-    academic_status = "aprobado" if float(detail.nota_final) >= current_app.config["PASSING_GRADE"] else "desaprobado"
+    passing = current_app.config["PASSING_GRADE"]
     return jsonify(
         detalle={
             "id": detail.id,
             "nro_matricula": detail.nro_matricula,
             "id_seccion": detail.id_seccion,
-            "nota_final": float(detail.nota_final),
-            "estado_academico": academic_status,
+            **notas_detalle(detail),
+            "estado_academico": "aprobado" if redondear(detail.nota_final) >= passing else "desaprobado",
         },
-        nota_minima=current_app.config["PASSING_GRADE"],
+        nota_minima=passing,
     )

@@ -44,7 +44,8 @@ def create_app(config_object="config.Config"):
     from .blueprints.secciones import bp as secciones_bp
     from .blueprints.matriculas import bp as matriculas_bp
     from .blueprints.admin import bp as admin_bp
-    for blueprint in (auth_bp, planes_bp, cursos_bp, alumnos_bp, periodos_bp, secciones_bp, matriculas_bp, admin_bp):
+    from .blueprints.carrito import bp as carrito_bp
+    for blueprint in (auth_bp, planes_bp, cursos_bp, alumnos_bp, periodos_bp, secciones_bp, matriculas_bp, admin_bp, carrito_bp):
         app.register_blueprint(blueprint, url_prefix="/api")
 
     @app.get("/health")

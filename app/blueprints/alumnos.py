@@ -1,11 +1,12 @@
 import re
-from datetime import date
+from datetime import date, time
 
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy import or_
 from werkzeug.security import generate_password_hash
 
+from ..academico import calcular_notas, ciclo_actual, course_sets, notas_detalle, ocupacion, prerequisitos, purgar_carritos_vencidos, redondear
 from ..errors import ApiError
 from ..extensions import db
 from ..models import (
@@ -13,6 +14,8 @@ from ..models import (
     Curso,
     HorarioCab,
     HorarioDCSeccion,
+    HorarioDCurso,
+    HorarioDet,
     Matricula,
     MatriculaDetalle,
     MezclaCurso,
@@ -168,49 +171,20 @@ def update_plan(cod_alumno):
 # ---------------------------------------------------------------------------
 # Consulta académica (el propio alumno o el administrador)
 # ---------------------------------------------------------------------------
-def _course_sets(alumno, passing_grade):
-    rows = (
-        db.session.query(HorarioCab.corr_pe, HorarioDCSeccion.cod_curso, MatriculaDetalle.nota_final)
-        .select_from(MatriculaDetalle)
-        .join(Matricula, MatriculaDetalle.nro_matricula == Matricula.nro_matricula)
-        .join(HorarioDCSeccion, MatriculaDetalle.id_seccion == HorarioDCSeccion.id_seccion)
-        .join(HorarioCab, HorarioDCSeccion.id_horario == HorarioCab.id_horario)
-        .filter(
-            Matricula.cod_alumno == alumno.cod_alumno,
-            Matricula.estado == "confirmada",
-            MatriculaDetalle.estado == "matriculado",
-        )
-        .all()
-    )
-    approved, in_progress, failed = set(), set(), set()
-    for corr, cod, nota in rows:
-        key = corr * 1000 + cod
-        if nota is None:
-            in_progress.add(key)
-        elif float(nota) >= passing_grade:
-            approved.add(key)
-        else:
-            failed.add(key)
-    return approved, in_progress, failed
-
-
 @bp.get("/alumnos/<cod_alumno>/malla")
 @jwt_required()
 def malla(cod_alumno):
     require_self_or_admin(cod_alumno)
     alumno = _get_alumno(cod_alumno)
     passing_grade = current_app.config["PASSING_GRADE"]
-    approved, in_progress, failed = _course_sets(alumno, passing_grade)
+    approved, in_progress, failed = course_sets(alumno)
 
     courses = (
         Curso.query.filter_by(cod_fac=alumno.cod_fac, cod_esc=alumno.cod_esc, corr_pe=alumno.corr_pe)
         .order_by(Curso.semestre, Curso.cod_curso)
         .all()
     )
-    mezclas = MezclaCurso.query.filter_by(cod_fac=alumno.cod_fac, cod_esc=alumno.cod_esc, corr_pe=alumno.corr_pe).all()
-    prereqs_by_curso = {}
-    for m in mezclas:
-        prereqs_by_curso.setdefault(m.cod_curso, set()).add(alumno.corr_pe * 1000 + m.cod_curso_prerequisito)
+    prereqs_by_curso = prerequisitos(alumno)
 
     result = []
     for course in courses:
@@ -231,7 +205,7 @@ def malla(cod_alumno):
         item["prerrequisitos"] = sorted(required)
         result.append(item)
 
-    return jsonify(alumno=alumno.to_dict(), cursos=result, nota_minima=passing_grade)
+    return jsonify(alumno=alumno.to_dict(), cursos=result, nota_minima=passing_grade, ciclo_actual=ciclo_actual(alumno, approved))
 
 
 @bp.get("/alumnos/<cod_alumno>/historial")
@@ -263,22 +237,26 @@ def historial(cod_alumno):
     for row in rows:
         detail = row.MatriculaDetalle
         academic_status = detail.estado
+        notas = notas_detalle(detail)
         if detail.estado == "matriculado":
-            if detail.nota_final is None:
+            if notas["nota_final"] is None:
                 academic_status = "en_curso"
             else:
-                academic_status = "aprobado" if float(detail.nota_final) >= passing_grade else "desaprobado"
+                academic_status = "aprobado" if notas["nota_final"] >= passing_grade else "desaprobado"
         historial_list.append({
+            **notas,
+            "turno": row.HorarioDCSeccion.turno,
+            "seccion": row.HorarioDCSeccion.cod_seccion,
             "id_detalle": detail.id,
             "nro_matricula": detail.nro_matricula,
             "id_seccion": detail.id_seccion,
             "periodo": row.PeriodoAcademico.to_dict(),
             "estado": detail.estado,
             "estado_academico": academic_status,
-            "nota_final": float(detail.nota_final) if detail.nota_final is not None else None,
             "curso": row.Curso.to_dict(),
         })
-    return jsonify(historial=historial_list, nota_minima=passing_grade)
+    alumno = db.session.get(Alumno, cod_alumno)
+    return jsonify(historial=historial_list, nota_minima=passing_grade, alumno=alumno.to_dict(), ciclo_actual=ciclo_actual(alumno))
 
 
 # ---------------------------------------------------------------------------
@@ -299,27 +277,60 @@ def _section_for_course(alumno, curso, periodo):
     )
 
 
+HISTORICO = "HISTORICO"
+
+
+def _seccion_historica(alumno, curso):
+    """Período y sección 'H' (registro histórico) para notas de cursos llevados fuera del sistema."""
+    periodo = PeriodoAcademico.query.filter_by(cod_per_acad=HISTORICO).first()
+    if not periodo:
+        nuevo_id = (db.session.query(db.func.max(PeriodoAcademico.unique_id)).scalar() or 0) + 1
+        periodo = PeriodoAcademico(unique_id=nuevo_id, cod_per_acad=HISTORICO, fec_inicio=date(2000, 1, 1), fec_fin=date(2025, 12, 31), estado="historico")
+        db.session.add(periodo)
+        db.session.flush()
+    cab = HorarioCab.query.filter_by(cod_per_acad=HISTORICO, cod_fac=alumno.cod_fac, cod_esc=alumno.cod_esc, corr_pe=alumno.corr_pe).first()
+    if not cab:
+        nuevo_id = (db.session.query(db.func.max(HorarioCab.id_horario)).scalar() or 0) + 1
+        cab = HorarioCab(id_horario=nuevo_id, cod_per_acad=HISTORICO, cod_fac=alumno.cod_fac, cod_esc=alumno.cod_esc, corr_pe=alumno.corr_pe, fec_inicio=periodo.fec_inicio)
+        db.session.add(cab)
+        db.session.flush()
+        for sem in range(1, 11):
+            db.session.add(HorarioDet(id_horario=cab.id_horario, semestre_corr=sem, semestre_desc=f"Ciclo {sem}"))
+        db.session.flush()
+    seccion = HorarioDCSeccion.query.filter_by(id_horario=cab.id_horario, cod_curso=curso.cod_curso).first()
+    if not seccion:
+        if not db.session.get(HorarioDCurso, (cab.id_horario, curso.semestre, curso.cod_curso)):
+            db.session.add(HorarioDCurso(id_horario=cab.id_horario, semestre_corr=curso.semestre, cod_curso=curso.cod_curso, nro_secc=1))
+            db.session.flush()
+        nuevo_id = (db.session.query(db.func.max(HorarioDCSeccion.id_seccion)).scalar() or 0) + 1
+        seccion = HorarioDCSeccion(
+            id_seccion=nuevo_id, id_horario=cab.id_horario, semestre_corr=curso.semestre, cod_curso=curso.cod_curso,
+            cod_seccion="H", turno="M", dia_teoria=1, hora_inicio=time(0, 0), hora_fin=time(0, 0),
+            aula="-", docente="REGISTRO HISTORICO", cupo_maximo=999, cupo_disponible=999,
+        )
+        db.session.add(seccion)
+        db.session.flush()
+    return periodo, seccion
+
+
 @bp.post("/alumnos/<cod_alumno>/calificar")
 @admin_required
 def calificar_curso(cod_alumno):
-    """Registra o corrige la nota final (0 a 20) de un curso del plan del alumno.
+    """Registra o corrige las notas de un curso del plan del alumno.
 
+    Acepta N1, N2, N3 (con sustitutorio y aplazado opcionales) o una nota final directa.
+    El resultado se redondea como en la UNFV: desde x.5 sube (10.5 -> 11), si no, baja (10.2 -> 10).
     Si el alumno ya está matriculado en el curso se califica esa matrícula; si no,
-    se registra la nota en una sección del curso del período indicado (o el primero).
-    Nota >= PASSING_GRADE aprueba y habilita los cursos que lo tienen como prerrequisito.
+    se registra la nota en una sección del curso del período indicado (o el primero con oferta).
     """
     alumno = _get_alumno(cod_alumno)
     data = request.get_json(silent=True) or {}
-    cod_curso, nota = data.get("cod_curso"), data.get("nota")
-    if cod_curso is None or nota is None or isinstance(nota, bool):
-        raise ApiError("datos_invalidos", "Se requieren cod_curso y nota.", 400)
     try:
-        nota = round(float(nota), 2)
-        cod_curso = int(cod_curso)
-    except (ValueError, TypeError):
-        raise ApiError("nota_invalida", "La nota debe ser un número válido entre 0 y 20.", 400)
-    if not 0 <= nota <= 20:
-        raise ApiError("nota_fuera_de_rango", "La nota debe estar en el rango de 0 a 20.", 400)
+        cod_curso = int(data.get("cod_curso"))
+    except (TypeError, ValueError):
+        raise ApiError("datos_invalidos", "Se requiere cod_curso.", 400)
+    notas = calcular_notas(data)
+    nota = notas["nota_final"]
 
     curso = Curso.query.filter_by(
         cod_fac=alumno.cod_fac, cod_esc=alumno.cod_esc, corr_pe=alumno.corr_pe, cod_curso=cod_curso
@@ -347,18 +358,16 @@ def calificar_curso(cod_alumno):
 
     detalle = existing
     if detalle is None:
-        periodos = PeriodoAcademico.query.order_by(PeriodoAcademico.fec_inicio.asc()).all()
         id_periodo = data.get("id_periodo")
         if id_periodo:
-            periodos = [p for p in periodos if p.unique_id == int(id_periodo)] or periodos
-        seccion = periodo = None
-        for candidate in periodos:
-            seccion = _section_for_course(alumno, curso, candidate)
-            if seccion:
-                periodo = candidate
-                break
-        if not seccion:
-            raise ApiError("sin_seccion", "El curso no tiene secciones programadas en ningún período.", 409)
+            periodo = db.get_or_404(PeriodoAcademico, int(id_periodo))
+            seccion = _section_for_course(alumno, curso, periodo)
+            if not seccion:
+                raise ApiError("sin_seccion", f"{curso.den_curso} no tiene secciones en {periodo.cod_per_acad}.", 409)
+        else:
+            # Nota de un curso llevado antes del sistema: se guarda como registro histórico
+            # (período cerrado aparte) para no ocupar créditos ni vacantes del semestre actual.
+            periodo, seccion = _seccion_historica(alumno, curso)
 
         matricula = Matricula.query.filter_by(cod_alumno=alumno.cod_alumno, id_periodo=periodo.unique_id).first()
         if not matricula:
@@ -374,7 +383,8 @@ def calificar_curso(cod_alumno):
             db.session.add(detalle)
         detalle.estado = "matriculado"
 
-    detalle.nota_final = nota
+    for campo in ("n1", "n2", "n3", "sustitutorio", "aplazado", "nota_final"):
+        setattr(detalle, campo, notas[campo])
     db.session.commit()
 
     passing_grade = current_app.config["PASSING_GRADE"]
@@ -396,7 +406,7 @@ def calificar_curso(cod_alumno):
         else []
     )
     nombres_sucesores = ", ".join(c.den_curso for c in sucesores) or "ninguno"
-    nota_txt = f"{nota:g}"
+    nota_txt = f"{nota:02d}"
     mensaje = (
         f"'{curso.den_curso}' APROBADO con {nota_txt}. Cursos que dependen de él: {nombres_sucesores}."
         if is_approved
@@ -405,10 +415,67 @@ def calificar_curso(cod_alumno):
     return jsonify(
         success=True,
         curso=curso.to_dict(),
-        nota_final=nota,
+        **notas_detalle(detalle),
         estado_academico="aprobado" if is_approved else "desaprobado",
         es_aprobado=is_approved,
         nota_minima=passing_grade,
         sucesores=[{"cod_curso": c.cod_curso, "den_curso": c.den_curso, "semestre": c.semestre} for c in sucesores],
         mensaje=mensaje,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Oferta de cursos del período para el alumno (vista de matrícula y carrito)
+# ---------------------------------------------------------------------------
+@bp.get("/alumnos/<cod_alumno>/oferta")
+@jwt_required()
+def oferta(cod_alumno):
+    """Cursos del plan del alumno programados en el período, con su estado, secciones y vacantes."""
+    from ..blueprints.secciones import query_secciones
+
+    require_self_or_admin(cod_alumno)
+    alumno = _get_alumno(cod_alumno)
+    periodo = db.get_or_404(PeriodoAcademico, request.args.get("periodo", type=int))
+    purgar_carritos_vencidos()
+    db.session.commit()
+
+    aprobados, en_curso, desaprobados = course_sets(alumno)
+    reqs = prerequisitos(alumno)
+    rows = query_secciones(periodo, plan=alumno.corr_pe)
+    occ = ocupacion([s for s, _ in rows], alumno)
+    nombres = {
+        c.corr_pe * 1000 + c.cod_curso: c.den_curso
+        for c in Curso.query.filter_by(cod_fac=alumno.cod_fac, cod_esc=alumno.cod_esc, corr_pe=alumno.corr_pe).all()
+    }
+
+    cursos = {}
+    for seccion, curso in rows:
+        clave = curso.corr_pe * 1000 + curso.cod_curso
+        if clave not in cursos:
+            faltan = reqs.get(curso.cod_curso, set()) - aprobados
+            if clave in aprobados:
+                estado = "aprobado"
+            elif clave in en_curso:
+                estado = "en_curso"
+            elif faltan:
+                estado = "bloqueado_por_prerrequisito"
+            elif clave in desaprobados:
+                estado = "desaprobado"
+            else:
+                estado = "disponible"
+            cursos[clave] = {
+                **curso.to_dict(),
+                "estado": estado,
+                "repitente": clave in desaprobados,
+                "prerrequisitos_pendientes": [nombres.get(f, "") for f in sorted(faltan)],
+                "secciones": [],
+            }
+        cursos[clave]["secciones"].append(seccion.to_dict(curso_dict=curso.to_dict(), ocupacion=occ.get(seccion.id_seccion)))
+
+    return jsonify(
+        periodo=periodo.to_dict(),
+        ciclo_actual=ciclo_actual(alumno, aprobados),
+        max_creditos=current_app.config["MAX_CREDITS"],
+        minutos_reserva=current_app.config["CARRITO_MINUTOS"],
+        cursos=sorted(cursos.values(), key=lambda c: (c["ciclo"], c["codigo_curso"])),
     )

@@ -20,6 +20,24 @@ services:
         value: "11"
       - key: MAX_CREDITS
         value: "26"
+      - key: SOBRECUPO_REPITENTES
+        value: "5"
+      - key: CARRITO_MINUTOS
+        value: "10"
+      - key: SESSION_HOURS
+        value: "2"
+      - key: FRONTEND_URL
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
       - key: ADMIN_USER
         value: admin
       - key: ADMIN_PASSWORD

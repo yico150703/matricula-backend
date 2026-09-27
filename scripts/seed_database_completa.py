@@ -1,8 +1,11 @@
 """Inicializa la base de datos de matrícula de forma SEGURA (idempotente).
 
 - Crea las tablas que falten y agrega columnas nuevas sin borrar datos.
-- Carga el catálogo (facultades, planes, cursos, prerrequisitos, períodos y horarios)
-  solo si la base está vacía.
+- Carga el catálogo oficial: malla 2019 de Ing. de Sistemas (docs/malla_curricular_bd_2019.xlsx)
+  y los horarios reales 2026-1 / 2026-2 con secciones A, B, C, turnos, docentes y aulas
+  (docs/horarios_2026.json, generado con scripts/fuentes/extraer_horarios.py).
+- Cuando cambia la versión del catálogo, lo reemplaza conservando alumnos y administradores
+  (las matrículas y notas de prueba anteriores se eliminan porque apuntan a horarios que ya no existen).
 - Garantiza que exista el usuario administrador y el alumno de demostración.
 
 Uso:
@@ -10,6 +13,7 @@ Uso:
     python scripts/seed_database_completa.py --reset   # BORRA TODO y vuelve a poblar
 """
 import argparse
+import json
 import os
 from datetime import date, datetime, time
 from decimal import Decimal
@@ -28,6 +32,10 @@ if hasattr(sys.stderr, "reconfigure"):
 from app import create_app
 from app.extensions import db
 from app.models import (
+    AppMeta,
+    CarritoItem,
+    SeccionSesion,
+    SolicitudPassword,
     Administrador,
     Alumno,
     Curso,
@@ -72,12 +80,28 @@ def clean_dec(val, default=Decimal("3.0")):
         return default
 
 
+CATALOGO_VERSION = "2026-horario-oficial-v1"
+HORARIOS_JSON = ROOT / "docs" / "horarios_2026.json"
+MALLA_XLSX = ROOT / "docs" / "malla_curricular_bd_2019.xlsx"
+PERIODOS = [
+    (1, "2026-1", date(2026, 3, 16), date(2026, 7, 31)),
+    (2, "2026-2", date(2026, 8, 17), date(2026, 12, 31)),
+]
+
 NEW_COLUMNS = {
     # tabla: {columna: DDL}
     "alumno": {
         "debe_cambiar_password": "BOOLEAN NOT NULL DEFAULT FALSE",
         "email_personal": "VARCHAR(254)",
         "telefono": "VARCHAR(20)",
+    },
+    "horario_d_c_seccion": {"turno": "VARCHAR(1) NOT NULL DEFAULT 'M'"},
+    "matricula_detalle": {
+        "n1": "NUMERIC(4,2)",
+        "n2": "NUMERIC(4,2)",
+        "n3": "NUMERIC(4,2)",
+        "sustitutorio": "NUMERIC(4,2)",
+        "aplazado": "NUMERIC(4,2)",
     },
 }
 
@@ -144,6 +168,22 @@ def ensure_demo_student():
     print("✓ Alumno demo 20260001 creado (contraseña inicial = código).")
 
 
+def version_catalogo():
+    meta = db.session.get(AppMeta, "catalogo")
+    return meta.valor if meta else None
+
+
+def limpiar_catalogo_anterior():
+    """Elimina horarios, cursos y matrículas de prueba del catálogo anterior. Conserva alumnos y administradores."""
+    print("! Actualizando catálogo: se reemplazan horarios/cursos y se eliminan matrículas y notas de prueba.")
+    for modelo in (CarritoItem, MatriculaDetalle, Matricula, SeccionSesion, HorarioDCSeccion, HorarioDCurso, HorarioDet, HorarioCab, MezclaCurso, Curso):
+        db.session.query(modelo).delete(synchronize_session=False)
+    # El Plan 2010 ya no se usa: sus alumnos pasan al Plan 2019 vigente
+    db.session.query(Alumno).filter(Alumno.corr_pe != 1).update({Alumno.corr_pe: 1}, synchronize_session=False)
+    db.session.query(PlanEstudio).filter(PlanEstudio.corr_pe != 1).delete(synchronize_session=False)
+    db.session.commit()
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reset", action="store_true", help="Borra toda la base y la vuelve a poblar.")
@@ -154,307 +194,135 @@ def main(argv=None):
         if args.reset:
             reset_database()
         ensure_schema()
-        if db.session.query(Facultad).first() is None:
+        actual = version_catalogo()
+        if actual != CATALOGO_VERSION:
+            if db.session.query(Curso).first() is not None:
+                limpiar_catalogo_anterior()
             seed_catalog()
+            meta = db.session.get(AppMeta, "catalogo") or AppMeta(clave="catalogo", valor="")
+            meta.valor = CATALOGO_VERSION
+            db.session.add(meta)
+            db.session.commit()
         else:
-            print("✓ Catálogo ya cargado: se conservan los datos existentes.")
+            print(f"✓ Catálogo {CATALOGO_VERSION} vigente: se conservan los datos existentes.")
         ensure_admin()
         ensure_demo_student()
         print("✓ Base de datos lista.")
 
 
+def _hora(texto):
+    h, m = texto.split(":")
+    return time(int(h), int(m))
+
+
 def seed_catalog():
-    """Carga el catálogo académico completo desde los Excel de docs/ (solo en base vacía)."""
+    """Carga facultades, plan 2019, cursos con códigos oficiales, prerrequisitos, períodos y horarios reales."""
+    hoy = date.today()
+    if not db.session.get(Facultad, 1):
+        db.session.add_all([Facultad(cod_fac=1, den_fac="FIIS"), Facultad(cod_fac=2, den_fac="Medicina")])
+        db.session.flush()
+    if not db.session.get(Escuela, (1, 1)):
+        db.session.add_all([
+            Escuela(cod_fac=1, cod_esc=1, den_escuela="Esc. Ing. de Sistemas"),
+            Escuela(cod_fac=1, cod_esc=2, den_escuela="Esc. Ing. Industrial"),
+            Escuela(cod_fac=1, cod_esc=3, den_escuela="Esc. Ing. de Transportes"),
+        ])
+        db.session.flush()
+    if not db.session.get(PlanEstudio, (1, 1, 1)):
+        db.session.add(PlanEstudio(cod_fac=1, cod_esc=1, corr_pe=1, anio_pe="Plan 2019", vigente=True))
+        db.session.flush()
 
-    # -----------------------------------------------------------------
-    # 1. FACULTAD (Imagen 1)
-    # -----------------------------------------------------------------
-    print("2. Insertando Facultades...")
-    f1 = Facultad(cod_fac=1, den_fac="FIIS")
-    f2 = Facultad(cod_fac=2, den_fac="Medicina")
-    db.session.add_all([f1, f2])
-    db.session.commit()
-    print("✓ Facultades: FIIS (1), Medicina (2)")
+    fuente = json.loads(HORARIOS_JSON.read_text(encoding="utf-8"))
+    codigos = fuente["codigos"]
 
-    # -----------------------------------------------------------------
-    # 2. ESCUELA (Imagen 1)
-    # -----------------------------------------------------------------
-    print("3. Insertando Escuelas...")
-    escuelas = [
-        Escuela(cod_fac=1, cod_esc=1, den_escuela="Esc. Ing Sistemas"),
-        Escuela(cod_fac=1, cod_esc=2, den_escuela="Esc. Ing. Industrial"),
-        Escuela(cod_fac=1, cod_esc=3, den_escuela="Esc. Ing Tranportes"),
-        Escuela(cod_fac=2, cod_esc=1, den_escuela="Esc. Medicina tropical"),
-        Escuela(cod_fac=2, cod_esc=2, den_escuela="Esc. Enfermeria"),
-    ]
-    db.session.add_all(escuelas)
-    db.session.commit()
-    print("✓ 5 Escuelas insertadas (Sistemas, Industrial, Transportes, Medicina, Enfermería)")
-
-    # -----------------------------------------------------------------
-    # 3. PLAN ESTUDIO (Imagen 2)
-    # -----------------------------------------------------------------
-    print("4. Insertando Planes de Estudio para Ing. de Sistemas...")
-    pe1 = PlanEstudio(cod_fac=1, cod_esc=1, corr_pe=1, anio_pe="Plan 2019", vigente=True)
-    pe2 = PlanEstudio(cod_fac=1, cod_esc=1, corr_pe=2, anio_pe="Plan 2010", vigente=False)
-    db.session.add_all([pe1, pe2])
-    db.session.commit()
-    print("✓ Planes de Estudio: Plan 2019 (corr 1, vigente) y Plan 2010 (corr 2)")
-
-    # -----------------------------------------------------------------
-    # 4 y 5. CURSOS Y MEZCLA CURSO (Prerrequisitos - Imágenes 2 y 3)
-    # -----------------------------------------------------------------
-    print("5. Cargando cursos y prerrequisitos de Ingeniería de Sistemas desde Excel...")
-    docs_dir = ROOT / "docs"
-
-    # A. Cursos Plan 2019 (corr_pe = 1)
-    path_2019 = docs_dir / "malla_curricular_bd_2019.xlsx"
-    df_c2019 = pd.read_excel(path_2019, sheet_name="CURSO", dtype=object)
-    df_p2019 = pd.read_excel(path_2019, sheet_name="PRERREQUISITO", dtype=object)
-
-    prereqs_set_2019 = set(df_p2019["id_curso"].astype(str).str.strip().tolist())
-
-    # Mapa de código oficial a correlativo cod_curso
-    map_code_to_codcurso_2019 = {}
-    for idx, row in enumerate(df_c2019.to_dict("records"), start=1):
-        codigo_asig = clean(row.get("id_curso"))
-        nombre = clean(row.get("nombre_curso"))
-        semestre = clean_int(row.get("id_semestre"), 1)
-        cred = clean_dec(row.get("creditos"), Decimal("3.0"))
-        area = clean(row.get("area_curricular"))
-        electiva = clean(row.get("mencion_electiva"))
-        tiene_prereq = "S" if codigo_asig in prereqs_set_2019 else "N"
-
-        # Calcular HT y HP
-        ht = 2 if cred <= 3 else 3
-        hp = 2 if cred >= 3 else 0
-
+    # Cursos de la malla 2019 (cod_curso = id de la malla; código oficial del horario UNFV)
+    df_c = pd.read_excel(MALLA_XLSX, sheet_name="CURSO", dtype=object)
+    df_p = pd.read_excel(MALLA_XLSX, sheet_name="PRERREQUISITO", dtype=object)
+    con_prereq = set(df_p["id_curso"].astype(str).str.strip())
+    cursos = {}
+    for row in df_c.to_dict("records"):
+        idm = clean_int(row.get("id_curso"))
+        cred = clean_dec(row.get("creditos"), Decimal("3"))
+        codigo = codigos.get(str(idm)) or clean(row.get("codigo_certificacion")) or f"SIS{idm:03d}"
         c = Curso(
-            cod_fac=1,
-            cod_esc=1,
-            corr_pe=1,
-            cod_curso=idx,
-            codigo_asignatura=codigo_asig,
-            den_curso=nombre,
-            semestre=semestre,
-            ht=ht,
-            hp=hp,
-            cred=cred,
-            prereq=tiene_prereq,
-            area_curricular=area,
-            mencion_electiva=electiva,
+            cod_fac=1, cod_esc=1, corr_pe=1, cod_curso=idm,
+            codigo_asignatura=codigo,
+            den_curso=clean(row.get("nombre_curso")),
+            semestre=clean_int(row.get("id_semestre"), 1),
+            ht=2 if cred <= 3 else 3, hp=2 if cred >= 3 else 0, cred=cred,
+            prereq="S" if str(idm) in con_prereq else "N",
+            area_curricular=clean(row.get("area_curricular")),
+            mencion_electiva=clean(row.get("mencion_electiva")),
         )
         db.session.add(c)
-        map_code_to_codcurso_2019[codigo_asig] = idx
+        cursos[idm] = c
+    db.session.flush()
+    n_pre = 0
+    for row in df_p.to_dict("records"):
+        a, b = clean_int(row.get("id_curso")), clean_int(row.get("id_prerrequisito"))
+        if a in cursos and b in cursos and a != b:
+            db.session.add(MezclaCurso(cod_fac=1, cod_esc=1, corr_pe=1, cod_curso=a, cod_curso_prerequisito=b))
+            n_pre += 1
+    db.session.flush()
+    print(f"✓ {len(cursos)} cursos del Plan 2019 y {n_pre} prerrequisitos.")
 
-    db.session.commit()
-    print(f"✓ {len(map_code_to_codcurso_2019)} cursos cargados para Plan 2019.")
+    # Períodos (se conservan si ya existen)
+    periodos = {}
+    for uid, cod, ini, fin in PERIODOS:
+        p = PeriodoAcademico.query.filter_by(cod_per_acad=cod).first()
+        if not p:
+            p = PeriodoAcademico(unique_id=uid, cod_per_acad=cod, fec_inicio=ini, fec_fin=fin,
+                                 estado="en_curso" if hoy <= fin else "cerrado")
+            db.session.add(p)
+        periodos[cod] = p
+    db.session.flush()
 
-    # Prerrequisitos MezclaCurso 2019
-    mezcla_count_2019 = 0
-    for row in df_p2019.to_dict("records"):
-        cod_c = clean(row.get("id_curso"))
-        cod_req = clean(row.get("id_prerrequisito"))
-        if cod_c in map_code_to_codcurso_2019 and cod_req in map_code_to_codcurso_2019:
-            num_c = map_code_to_codcurso_2019[cod_c]
-            num_req = map_code_to_codcurso_2019[cod_req]
-            db.session.add(MezclaCurso(
-                cod_fac=1,
-                cod_esc=1,
-                corr_pe=1,
-                cod_curso=num_c,
-                cod_curso_prerequisito=num_req,
-            ))
-            mezcla_count_2019 += 1
-
-    db.session.commit()
-    print(f"✓ {mezcla_count_2019} relaciones de prerrequisito en MezclaCurso (Plan 2019).")
-
-    # B. Cursos Plan 2010 (corr_pe = 2)
-    path_2010 = docs_dir / "plan_curricular_2010_bd.xlsx"
-    df_c2010 = pd.read_excel(path_2010, sheet_name="CURSO", dtype=object)
-    df_p2010 = pd.read_excel(path_2010, sheet_name="PRERREQUISITO", dtype=object)
-
-    prereqs_set_2010 = set(df_p2010["id_curso"].astype(str).str.strip().tolist())
-    map_code_to_codcurso_2010 = {}
-
-    for idx, row in enumerate(df_c2010.to_dict("records"), start=1):
-        codigo_asig = clean(row.get("id_curso"))
-        nombre = clean(row.get("nombre_curso"))
-        semestre = clean_int(row.get("id_ciclo"), 1)
-        cred = clean_dec(row.get("creditos"), Decimal("3.0"))
-        tiene_prereq = "S" if codigo_asig in prereqs_set_2010 else "N"
-
-        ht = 2 if cred <= 3 else 3
-        hp = 2 if cred >= 3 else 0
-
-        c = Curso(
-            cod_fac=1,
-            cod_esc=1,
-            corr_pe=2,
-            cod_curso=idx,
-            codigo_asignatura=codigo_asig,
-            den_curso=nombre,
-            semestre=semestre,
-            ht=ht,
-            hp=hp,
-            cred=cred,
-            prereq=tiene_prereq,
-            area_curricular=None,
-            mencion_electiva=None,
-        )
-        db.session.add(c)
-        map_code_to_codcurso_2010[codigo_asig] = idx
-
-    db.session.commit()
-    print(f"✓ {len(map_code_to_codcurso_2010)} cursos cargados para Plan 2010.")
-
-    # Prerrequisitos MezclaCurso 2010
-    mezcla_count_2010 = 0
-    for row in df_p2010.to_dict("records"):
-        cod_c = clean(row.get("id_curso"))
-        cod_req = clean(row.get("id_prerrequisito"))
-        if cod_c in map_code_to_codcurso_2010 and cod_req in map_code_to_codcurso_2010:
-            num_c = map_code_to_codcurso_2010[cod_c]
-            num_req = map_code_to_codcurso_2010[cod_req]
-            db.session.add(MezclaCurso(
-                cod_fac=1,
-                cod_esc=1,
-                corr_pe=2,
-                cod_curso=num_c,
-                cod_curso_prerequisito=num_req,
-            ))
-            mezcla_count_2010 += 1
-
-    db.session.commit()
-    print(f"✓ {mezcla_count_2010} relaciones de prerrequisito en MezclaCurso (Plan 2010).")
-
-    # -----------------------------------------------------------------
-    # 6. PERIODO ACADÉMICO (Imagen 4 ER)
-    # -----------------------------------------------------------------
-    print("6. Insertando Períodos Académicos 2026-1 y 2026-2...")
-    per1 = PeriodoAcademico(unique_id=1, cod_per_acad="2026-1", fec_inicio=date(2026, 3, 16), fec_fin=date(2026, 7, 31), estado="en_curso")
-    per2 = PeriodoAcademico(unique_id=2, cod_per_acad="2026-2", fec_inicio=date(2026, 8, 17), fec_fin=date(2026, 12, 31), estado="en_curso")
-    db.session.add_all([per1, per2])
-    db.session.commit()
-    print("✓ Períodos 2026-1 (Impar) y 2026-2 (Par) configurados.")
-
-    # -----------------------------------------------------------------
-    # 7, 8, 9, 10. HORARIOS: HorarioCab, HorarioDet, HorarioDCurso, HorarioDCSeccion
-    # -----------------------------------------------------------------
-    print("7. Generando estructura de Horarios según Diagrama ER...")
-    docentes = [
-        "Dr. Carlos Mendoza Ramos",
-        "Mg. Rosa Huamán Prado",
-        "Ing. Jorge Quispe Castro",
-        "Dra. Elena Vargas Silva",
-        "Ing. Manuel Ríos Cusiquispe",
-        "Mg. Alberto Chumpitaz Vega",
-        "Dra. Patricia Benavides Salas",
-        "Ing. Fernando Alarcón Díaz",
-    ]
-    aulas = ["FIIS-101", "FIIS-102", "FIIS-201", "LAB-SIS-01", "LAB-IA"]
-    horarios_slots = [
-        (1, time(8, 0), time(10, 0)),
-        (2, time(10, 0), time(12, 0)),
-        (3, time(14, 0), time(16, 0)),
-        (4, time(16, 0), time(18, 0)),
-        (5, time(18, 0), time(20, 0)),
-        (6, time(8, 0), time(12, 0)),
-    ]
-
-    id_horario_counter = 1
-    id_seccion_counter = 1
-
-    # Para cada período (2026-1 y 2026-2) y cada plan (1 y 2)
-    for cod_per, p_obj in [("2026-1", per1), ("2026-2", per2)]:
-        for corr in [1, 2]:
-            h_cab = HorarioCab(
-                id_horario=id_horario_counter,
-                cod_per_acad=cod_per,
-                cod_fac=1,
-                cod_esc=1,
-                corr_pe=corr,
-                fec_inicio=p_obj.fec_inicio,
-            )
-            db.session.add(h_cab)
-
-            # HorarioDet para los semestres 1 al 10
-            for sem in range(1, 11):
-                h_det = HorarioDet(
-                    id_horario=id_horario_counter,
-                    semestre_corr=sem,
-                    semestre_desc=f"Ciclo {sem}",
-                )
-                db.session.add(h_det)
-
+    # Horarios oficiales
+    next_horario = (db.session.query(db.func.max(HorarioCab.id_horario)).scalar() or 0) + 1
+    next_seccion = (db.session.query(db.func.max(HorarioDCSeccion.id_seccion)).scalar() or 0) + 1
+    cabeceras, programados = {}, {}
+    total = 0
+    for item in fuente["secciones"]:
+        cod_per = item["periodo"]
+        if cod_per not in periodos or item["id_curso_malla"] not in cursos:
+            continue
+        if cod_per not in cabeceras:
+            cab = HorarioCab(id_horario=next_horario, cod_per_acad=cod_per, cod_fac=1, cod_esc=1, corr_pe=1,
+                             fec_inicio=periodos[cod_per].fec_inicio)
+            db.session.add(cab)
             db.session.flush()
+            for sem in range(1, 11):
+                db.session.add(HorarioDet(id_horario=next_horario, semestre_corr=sem, semestre_desc=f"Ciclo {sem}"))
+            db.session.flush()
+            cabeceras[cod_per] = next_horario
+            next_horario += 1
+        id_h = cabeceras[cod_per]
+        curso = cursos[item["id_curso_malla"]]
+        clave = (id_h, curso.cod_curso)
+        if clave not in programados:
+            hc = HorarioDCurso(id_horario=id_h, semestre_corr=curso.semestre, cod_curso=curso.cod_curso, nro_secc=0)
+            db.session.add(hc)
+            programados[clave] = hc
+        programados[clave].nro_secc += 1
+        db.session.flush()
 
-            # Cursos de este plan
-            cursos_plan = Curso.query.filter_by(cod_fac=1, cod_esc=1, corr_pe=corr).all()
-            for c in cursos_plan:
-                # HorarioDCurso
-                h_curso = HorarioDCurso(
-                    id_horario=id_horario_counter,
-                    semestre_corr=c.semestre,
-                    cod_curso=c.cod_curso,
-                    nro_secc=1,
-                )
-                db.session.add(h_curso)
-                db.session.flush()
-
-                # HorarioDCSeccion 01
-                slot = horarios_slots[(c.cod_curso + c.semestre) % len(horarios_slots)]
-                doc = docentes[(c.cod_curso + c.semestre) % len(docentes)]
-                aula = aulas[(c.cod_curso + c.semestre) % len(aulas)]
-
-                sec1 = HorarioDCSeccion(
-                    id_seccion=id_seccion_counter,
-                    id_horario=id_horario_counter,
-                    semestre_corr=c.semestre,
-                    cod_curso=c.cod_curso,
-                    cod_seccion="01",
-                    dia_teoria=slot[0],
-                    hora_inicio=slot[1],
-                    hora_fin=slot[2],
-                    aula=aula,
-                    docente=doc,
-                    cupo_maximo=35,
-                    cupo_disponible=30,
-                )
-                db.session.add(sec1)
-                id_seccion_counter += 1
-
-                # Sección 02 para los ciclos correspondientes al período
-                es_impar = (c.semestre % 2 == 1)
-                if (cod_per == "2026-1" and es_impar) or (cod_per == "2026-2" and not es_impar):
-                    slot2 = horarios_slots[(c.cod_curso + c.semestre + 2) % len(horarios_slots)]
-                    doc2 = docentes[(c.cod_curso + c.semestre + 3) % len(docentes)]
-                    aula2 = aulas[(c.cod_curso + c.semestre + 1) % len(aulas)]
-
-                    sec2 = HorarioDCSeccion(
-                        id_seccion=id_seccion_counter,
-                        id_horario=id_horario_counter,
-                        semestre_corr=c.semestre,
-                        cod_curso=c.cod_curso,
-                        cod_seccion="02",
-                        dia_teoria=slot2[0],
-                        hora_inicio=slot2[1],
-                        hora_fin=slot2[2],
-                        aula=aula2,
-                        docente=doc2,
-                        cupo_maximo=35,
-                        cupo_disponible=32,
-                    )
-                    db.session.add(sec2)
-                    id_seccion_counter += 1
-
-            id_horario_counter += 1
-            db.session.commit()
-
-    print(f"✓ HorarioCab, HorarioDet, HorarioDCurso y {id_seccion_counter - 1} secciones creadas.")
-
-    print("✓ Catálogo académico cargado.")
+        ses = item["sesiones"]
+        aula = item["aula"] or "POR ASIGNAR"
+        sec = HorarioDCSeccion(
+            id_seccion=next_seccion, id_horario=id_h, semestre_corr=curso.semestre, cod_curso=curso.cod_curso,
+            cod_seccion=item["seccion"], turno=item["turno"],
+            dia_teoria=ses[0]["dia"], hora_inicio=_hora(ses[0]["inicio"]), hora_fin=_hora(ses[0]["fin"]),
+            aula=aula, docente=item["docente"] or "POR ASIGNAR",
+            cupo_maximo=item["cupo"], cupo_disponible=item["cupo"],
+        )
+        db.session.add(sec)
+        for b in ses:
+            db.session.add(SeccionSesion(id_seccion=next_seccion, dia=b["dia"], hora_inicio=_hora(b["inicio"]),
+                                         hora_fin=_hora(b["fin"]), aula=aula))
+        next_seccion += 1
+        total += 1
+    db.session.commit()
+    print(f"✓ {total} secciones oficiales (A/B/C/E) con turnos, docentes y aulas.")
 
 
 if __name__ == "__main__":

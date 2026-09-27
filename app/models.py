@@ -1,9 +1,29 @@
+import re
 from datetime import datetime
 from sqlalchemy import CheckConstraint, ForeignKey, ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.orm import relationship
 from .extensions import db
 
 BIGINT = db.BigInteger().with_variant(db.Integer, "sqlite")
+
+TURNOS = {"M": "Mañana", "T": "Tarde", "N": "Noche"}
+DIAS = {1: "Lunes", 2: "Martes", 3: "Miércoles", 4: "Jueves", 5: "Viernes", 6: "Sábado", 7: "Domingo"}
+LABORATORIOS = {"ELEC": "Laboratorio de Electrónica", "FISICA": "Laboratorio de Física"}
+
+
+def ubicacion_aula(codigo):
+    """Traduce el código del horario oficial (B-505, LAB 1...) a una ubicación legible."""
+    codigo = (codigo or "").strip().upper()
+    m = re.match(r"^([A-Z])-?(\d)(\d{2})$", codigo)
+    if m:
+        pabellon, piso, resto = m.groups()
+        return {"codigo": codigo, "tipo": "aula", "pabellon": pabellon, "piso": int(piso),
+                "texto": f"Pabellón {pabellon} · Aula {piso}{resto}", "detalle": f"{piso}.º piso"}
+    m = re.match(r"^LAB\.?\s*(.+)$", codigo)
+    if m:
+        nombre = LABORATORIOS.get(m.group(1), f"Laboratorio de Cómputo {m.group(1)}")
+        return {"codigo": codigo, "tipo": "laboratorio", "pabellon": None, "piso": None, "texto": nombre, "detalle": "Laboratorio"}
+    return {"codigo": codigo or None, "tipo": "otro", "pabellon": None, "piso": None, "texto": codigo or "Por asignar", "detalle": ""}
 
 
 # 1. FACULTAD (Imagen 1)
@@ -84,10 +104,20 @@ class Curso(db.Model):
 
     plan_estudio = relationship("PlanEstudio", back_populates="cursos")
 
+    @property
+    def abreviatura(self):
+        palabras = [p for p in re.split(r"[^A-ZÁÉÍÓÚÑ0-9/]+", self.den_curso.upper()) if p]
+        romanos = [p for p in palabras if re.fullmatch(r"I{1,3}|IV|V|VI{0,3}|IX|X", p)]
+        vacias = {"DE", "DEL", "LA", "LAS", "EL", "LOS", "Y", "E", "EN", "A", "CON", "WITH"}
+        significativas = [p for p in palabras if p not in vacias and p not in romanos]
+        letras = significativas[0][:3] if len(significativas) == 1 else "".join(p[0] for p in significativas)[:4]
+        return f"{letras} {romanos[-1]}" if romanos else letras
+
     def to_dict(self, include_prerequisites=False):
         # Mantiene compatibilidad con la API consumida por el frontend
         id_unico = self.corr_pe * 1000 + self.cod_curso
         return {
+            "abreviatura": self.abreviatura,
             "id_curso": id_unico,
             "cod_curso": self.cod_curso,
             "codigo_curso": self.codigo_asignatura,
@@ -217,9 +247,19 @@ class HorarioDCSeccion(db.Model):
     aula = db.Column(db.String(30), nullable=False, default="FIIS-101")
     docente = db.Column(db.String(150), nullable=False)
     cupo_maximo = db.Column(db.SmallInteger, nullable=False, default=35)
-    cupo_disponible = db.Column(db.SmallInteger, nullable=False, default=30)
+    cupo_disponible = db.Column(db.SmallInteger, nullable=False, default=30)  # legado: la ocupación se calcula
+    turno = db.Column(db.String(1), nullable=False, default="M", server_default="M")  # M, T, N
 
     curso_programado = relationship("HorarioDCurso", back_populates="secciones")
+    sesiones = relationship(
+        "SeccionSesion", back_populates="seccion", cascade="all, delete-orphan", order_by="SeccionSesion.dia, SeccionSesion.hora_inicio"
+    )
+
+    def bloques(self):
+        """Sesiones semanales de la sección (si no hay detalle, usa el horario principal)."""
+        if self.sesiones:
+            return list(self.sesiones)
+        return [SeccionSesion(dia=self.dia_teoria, hora_inicio=self.hora_inicio, hora_fin=self.hora_fin, aula=self.aula)]
 
     @property
     def dia(self):
@@ -244,12 +284,13 @@ class HorarioDCSeccion(db.Model):
             pass
         return None
 
-    def to_dict(self, curso_dict=None):
+    def to_dict(self, curso_dict=None, ocupacion=None):
         if curso_dict is None:
             c = self.curso
             if c:
                 curso_dict = c.to_dict()
-        return {
+        sesiones = [b.to_dict() for b in self.bloques()]
+        data = {
             "id_seccion": self.id_seccion,
             "id_horario": self.id_horario,
             "id_curso": (curso_dict.get("id_curso") if curso_dict else self.cod_curso),
@@ -261,10 +302,42 @@ class HorarioDCSeccion(db.Model):
             "hora_inicio": self.hora_inicio.isoformat(timespec="minutes"),
             "hora_fin": self.hora_fin.isoformat(timespec="minutes"),
             "aula": self.aula,
+            "ubicacion": ubicacion_aula(self.aula),
             "docente": self.docente,
+            "turno": self.turno,
+            "turno_nombre": TURNOS.get(self.turno, self.turno),
+            "sesiones": sesiones,
             "cupo_maximo": self.cupo_maximo,
             "cupo_disponible": self.cupo_disponible,
             "curso": curso_dict,
+        }
+        if ocupacion is not None:
+            data.update(ocupacion)
+            data["cupo_disponible"] = max(0, ocupacion["limite"] - ocupacion["matriculados"] - ocupacion["reservados"])
+        return data
+
+
+class SeccionSesion(db.Model):
+    """Cada bloque semanal de clases de una sección (una sección puede dictarse 1 a 3 días)."""
+
+    __tablename__ = "seccion_sesion"
+    id = db.Column(BIGINT, primary_key=True, autoincrement=True)
+    id_seccion = db.Column(BIGINT, ForeignKey("horario_d_c_seccion.id_seccion", ondelete="CASCADE"), nullable=False, index=True)
+    dia = db.Column(db.SmallInteger, nullable=False)  # 1=Lun .. 6=Sáb
+    hora_inicio = db.Column(db.Time, nullable=False)
+    hora_fin = db.Column(db.Time, nullable=False)
+    aula = db.Column(db.String(30), nullable=False)
+
+    seccion = relationship("HorarioDCSeccion", back_populates="sesiones")
+
+    def to_dict(self):
+        return {
+            "dia": self.dia,
+            "dia_nombre": DIAS.get(self.dia, str(self.dia)),
+            "hora_inicio": self.hora_inicio.isoformat(timespec="minutes"),
+            "hora_fin": self.hora_fin.isoformat(timespec="minutes"),
+            "aula": self.aula,
+            "ubicacion": ubicacion_aula(self.aula),
         }
 
 
@@ -374,10 +447,50 @@ class MatriculaDetalle(db.Model):
     nro_matricula = db.Column(BIGINT, ForeignKey("matricula.nro_matricula", ondelete="CASCADE"), nullable=False)
     id_seccion = db.Column(BIGINT, ForeignKey("horario_d_c_seccion.id_seccion", ondelete="RESTRICT"), nullable=False)
     estado = db.Column(db.String(12), nullable=False, default="matriculado")
-    nota_final = db.Column(db.Numeric(4, 2))
+    nota_final = db.Column(db.Numeric(4, 2))  # siempre entero (redondeo: desde .5 sube)
+    n1 = db.Column(db.Numeric(4, 2))
+    n2 = db.Column(db.Numeric(4, 2))
+    n3 = db.Column(db.Numeric(4, 2))
+    sustitutorio = db.Column(db.Numeric(4, 2))
+    aplazado = db.Column(db.Numeric(4, 2))
 
     matricula = relationship("Matricula", back_populates="detalles")
     seccion = relationship("HorarioDCSeccion")
+
+
+# 13. CARRITO DE MATRÍCULA (reserva temporal de vacantes)
+class CarritoItem(db.Model):
+    __tablename__ = "carrito_item"
+    __table_args__ = (UniqueConstraint("cod_alumno", "id_periodo", "id_seccion"),)
+    id = db.Column(BIGINT, primary_key=True, autoincrement=True)
+    cod_alumno = db.Column(db.String(20), ForeignKey("alumno.cod_alumno", ondelete="CASCADE"), nullable=False, index=True)
+    id_periodo = db.Column(BIGINT, ForeignKey("periodo_academico.unique_id", ondelete="CASCADE"), nullable=False)
+    id_seccion = db.Column(BIGINT, ForeignKey("horario_d_c_seccion.id_seccion", ondelete="CASCADE"), nullable=False, index=True)
+    creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    expira_en = db.Column(db.DateTime, nullable=False)
+
+    seccion = relationship("HorarioDCSeccion")
+
+
+# 14. SOLICITUDES DE RECUPERACIÓN DE CONTRASEÑA
+class SolicitudPassword(db.Model):
+    __tablename__ = "solicitud_password"
+    id = db.Column(BIGINT, primary_key=True, autoincrement=True)
+    rol = db.Column(db.String(10), nullable=False)  # alumno | admin
+    usuario = db.Column(db.String(50), nullable=False, index=True)  # cod_alumno o usuario admin
+    token_hash = db.Column(db.String(64), nullable=False, unique=True)
+    creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    expira_en = db.Column(db.DateTime, nullable=False)
+    estado = db.Column(db.String(12), nullable=False, default="pendiente")  # pendiente | usada | atendida | anulada
+    canal = db.Column(db.String(12), nullable=False, default="oficina")  # correo | oficina
+    atendido_en = db.Column(db.DateTime)
+
+
+# 15. METADATOS DE LA APLICACIÓN (versión del catálogo cargado, etc.)
+class AppMeta(db.Model):
+    __tablename__ = "app_meta"
+    clave = db.Column(db.String(50), primary_key=True)
+    valor = db.Column(db.String(200), nullable=False)
 
 
 # Aliases para compatibilidad

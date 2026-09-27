@@ -12,7 +12,7 @@ ESTADOS_PERIODO = {"en_curso", "cerrado"}
 
 @bp.get("/periodos")
 def list_periodos():
-    periodos = PeriodoAcademico.query.order_by(PeriodoAcademico.fec_inicio.asc()).all()
+    periodos = PeriodoAcademico.query.filter(PeriodoAcademico.estado != "historico").order_by(PeriodoAcademico.fec_inicio.asc()).all()
     return jsonify(periodos=[periodo.to_dict() for periodo in periodos])
 
 
@@ -21,6 +21,8 @@ def list_periodos():
 def update_periodo(id_periodo):
     """Abre o cierra un período para matrícula (solo administrador)."""
     periodo = db.get_or_404(PeriodoAcademico, id_periodo)
+    if periodo.estado == "historico":
+        raise ApiError("periodo_historico", "El registro histórico no se puede abrir para matrícula.", 400)
     data = request.get_json(silent=True) or {}
     estado = str(data.get("estado") or "").strip()
     if estado not in ESTADOS_PERIODO:
