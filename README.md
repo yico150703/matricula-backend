@@ -13,7 +13,7 @@ API REST en Flask para el plan de estudios 2019 de Ingeniería de Sistemas (el P
 | **Asistente de Escuela** | Correo o usuario. | Fase 3: asigna pabellón, aula o laboratorio a cada sección o a cada sesión. |
 | **Docente** | Correo o usuario (contraseña inicial = usuario). | Fase 4: ve su horario, confirma cada sección o reporta un problema. Desde la fase 5: **registra las notas de sus salones y envía el acta firmada (PDF)** al Director. |
 
-**Cuentas del personal**: el administrador las crea con nombres y apellidos; el usuario se arma con la inicial del primer nombre y los apellidos (`Juan Carlos Alvarado Torres` → `jalvaradotorres`, correo `jalvaradotorres@unfv.pe` según `STAFF_EMAIL_DOMAIN`, contraseña inicial = usuario, con cambio obligatorio). Si el usuario ya existe se agrega un número (`jalvaradotorres2`). Todos los roles tienen recuperación de contraseña.
+**Cuentas del personal**: el administrador las crea con nombres y apellidos; el usuario sigue el formato UNFV: inicial del primer nombre + apellido paterno + inicial del materno (`José Alvarado Torres` → `jalvaradot`, correo `jalvaradot@unfv.edu.pe`; contraseña inicial = usuario, con cambio obligatorio). Si el usuario ya existe se agrega un número (`jalvaradot2`). Las cuentas creadas con el formato anterior se migran solas una vez al arrancar. Todos los roles tienen recuperación de contraseña.
 
 **Cuentas de prueba compartidas** (se muestran en el login). El script de la base las crea o **las repara en cada arranque** (contraseña conocida, activas y sin cambio obligatorio) y su contraseña no se puede cambiar desde el sistema, así nadie deja a los demás sin acceso. Con `CUENTAS_PRUEBA=false` se desactivan.
 
@@ -23,7 +23,7 @@ API REST en Flask para el plan de estudios 2019 de Ingeniería de Sistemas (el P
 | Jefe de Departamento | `jefedepartamentoescuelasistemas@unfv.edu.pe` | `Jefe2026!` |
 | Director de Escuela | `directorescuelasistemas@unfv.edu.pe` | `Director2026!` |
 | Asistente de Escuela | `asistenteescuelasistemas@unfv.edu.pe` | `Asistente2026!` |
-| Docente | `jalvaradotorres@unfv.pe` | `Docente2026!` |
+| Docente | `jalvaradot@unfv.edu.pe` | `Docente2026!` |
 | Alumno | `20260001` | `20260001` |
 
 El administrador real (`admin`, contraseña inicial `ADMIN_PASSWORD`) no es una cuenta de prueba: debe cambiar su contraseña al primer ingreso. **El servidor exige ese cambio**: con la contraseña inicial solo se puede consultar el perfil y cambiarla. Una cuenta desactivada, o con otro rol, pierde el acceso aunque tenga un token vigente.
@@ -40,11 +40,15 @@ Cada período tiene un proceso con 6 fases (más el cierre). Cada rol solo edita
 | 2. Asignación de docentes | Director de Escuela | Asigna docentes (se validan cruces del docente). Puede devolver al jefe con un motivo. |
 | 3. Confirmación y aulas | Jefe + Director + Asistente | Jefe y director confirman; el asistente asigna aulas (se validan cruces por sesión) y publica para los docentes. |
 | 4. Confirmación docente | Docentes | Cada docente confirma sus secciones o reporta un problema. |
-| 5. Matrícula abierta | Alumnos | El director establece los horarios cuando todo está confirmado; los alumnos pueden matricularse. |
+| 5. Matrícula abierta | Alumnos | **Automático**: cuando todos los docentes confirman (y no quedan solicitudes abiertas) los horarios quedan establecidos y se abre la matrícula. |
 | 6. Ajustes | Todos por solicitud | Hasta `DIAS_AJUSTE_HORARIO` días (14) después del inicio de clases. |
 | 7. Cerrado | — | El director cierra el proceso y la matrícula. |
 
-Los alumnos solo ven y se matriculan en períodos en fase 5 o 6 y antes de la fecha de fin del período (los períodos terminados se cierran solos). Si un cambio aprobado modifica el horario o el aula de una sección, el docente debe volver a confirmarla. Al crear un período nuevo (panel del administrador) empieza en la fase 1.
+Las pantallas del personal muestran siempre el período en proceso (se elige solo; nadie cambia de período ni de fase a mano). Los alumnos solo ven y se matriculan en períodos en fase 5 o 6 y antes de la fecha de fin del período (los períodos terminados se cierran solos). Si un cambio aprobado modifica el horario o el aula de una sección, el docente debe volver a confirmarla. Al crear un período nuevo (panel del administrador) empieza en la fase 1.
+
+**Calendario**: el período AAAA-1 empieza un **lunes de marzo, abril o mayo**; el fin se calcula solo (16 semanas de clases, termina el sábado de la semana 16). Sigue 1 semana de vacaciones y el AAAA-2 empieza el lunes siguiente (se calcula solo a partir del AAAA-1). Un período en programación sin matrículas se puede eliminar desde el panel.
+
+**Horarios**: las clases van en bloques de 50 minutos desde las 08:00 (08:00, 08:50, 09:40, …, 22:10). Cada sección debe dictar al menos las horas semanales del plan de estudios oficial (HT + HP; el plan indica un total de (HT+HP) × 16 por semestre). Los horarios oficiales 2026 cumplen ese mínimo y algunas secciones tienen 1 a 3 horas extra de práctica, por eso se exige el mínimo y no un valor exacto.
 
 Al registrar un alumno solo se envían `cod_alumno`, `nombres`, `apellidos` e `id_plan` (1 = Plan 2019). El correo `código@unfv.edu.pe` y la contraseña inicial (el código) se generan automáticamente.
 
@@ -72,7 +76,7 @@ Los horarios se generan desde los PDF oficiales con `scripts/fuentes/extraer_hor
 2. Crea y activa un entorno virtual: `python -m venv .venv`, luego `.venv\Scripts\activate` en Windows.
 3. Instala dependencias: `pip install -r requirements.txt`.
 4. Copia `.env.example` a `.env` y configura `DATABASE_URL`, `SECRET_KEY`, `JWT_SECRET_KEY` y `FRONTEND_ORIGIN`.
-5. Inicializa la base: `python scripts/seed_database_completa.py`. Es **seguro ejecutarlo siempre** (Render lo ejecuta en cada arranque): crea tablas y columnas faltantes y crea el administrador, el personal de prueba, las cuentas de los docentes, el alumno demo `20260001` y el proceso de horarios de cada período si no existen (además deja creado el período `2027-1` en la fase 1). Si cambia `CATALOGO_VERSION` **no toca nada** salvo que se ejecute con `--reemplazar-catalogo` o con `REEMPLAZAR_CATALOGO=<versión>`: en ese caso reemplaza cursos y horarios conservando alumnos y personal, pero elimina las matrículas y notas del catálogo anterior. Para empezar de cero usa `--reset`.
+5. Inicializa la base: `python scripts/seed_database_completa.py`. Es **seguro ejecutarlo siempre** (Render lo ejecuta en cada arranque): crea tablas y columnas faltantes y crea el administrador, el personal de prueba, las cuentas de los docentes, el alumno demo `20260001` y el proceso de horarios de cada período si no existen (el período 2027-1 ya no se crea solo: lo crea el administrador; el 2027-1 de prueba de versiones anteriores se elimina una vez si no tiene matrículas). Si cambia `CATALOGO_VERSION` **no toca nada** salvo que se ejecute con `--reemplazar-catalogo` o con `REEMPLAZAR_CATALOGO=<versión>`: en ese caso reemplaza cursos y horarios conservando alumnos y personal, pero elimina las matrículas y notas del catálogo anterior. Para empezar de cero usa `--reset`.
 6. Inicia la API: `flask --app wsgi:app run --debug`.
 
 La comprobación se expone en `GET /health` (incluye el estado de la base de datos).
@@ -91,7 +95,6 @@ La comprobación se expone en `GET /health` (incluye el estado de la base de dat
 | `SOBRECUPO_REPITENTES` | Vacantes extra por sección para alumnos que repiten el curso (por defecto 5). |
 | `CARRITO_MINUTOS` | Minutos de reserva de vacantes en el carrito (por defecto 10). |
 | `SESSION_HOURS` | Duración máxima del token de sesión (por defecto 2). |
-| `STAFF_EMAIL_DOMAIN` | Dominio del correo generado para el personal (por defecto `unfv.pe`). |
 | `DIAS_AJUSTE_HORARIO` | Días de ajustes de horario tras el inicio de clases (por defecto 14). |
 | `CUENTAS_PRUEBA` | `true` (por defecto) mantiene las cuentas de prueba del login; `false` las desactiva. |
 | `ZONA_HORARIA` | Zona para las fechas del proceso (por defecto `America/Lima`; el servidor trabaja en UTC). |
@@ -137,14 +140,14 @@ Las respuestas de error tienen la forma `{"error":"...","detail":"..."}`. Los ca
 | `POST /api/auth/recuperar` · `GET/POST /api/auth/restablecer` | público | Recuperación de contraseña con enlace de un solo uso. |
 | `GET /api/admin/solicitudes-password` · `POST .../:id/atender` | admin | Atiende solicitudes (`enlace`, `restablecer`, `descartar`). |
 | `GET/POST /api/admin/usuarios` · `PATCH .../:id` · `POST .../:id/reset-password` | admin | Personal: listar, crear (`nombres`, `apellidos`, `rol`), cambiar rol o estado, restablecer contraseña. |
-| `POST /api/admin/periodos` | admin | Crea un período (`cod_per_acad`, `fecha_inicio`, `fecha_fin`) en la fase 1. |
+| `POST /api/admin/periodos` · `DELETE /api/admin/periodos/:id` | admin | Crea un período en la fase 1 (`cod_per_acad` y, para el AAAA-1, `fecha_inicio`: lunes de marzo a mayo; el fin y el AAAA-2 se calculan solos). Elimina un período en programación sin matrículas. |
 | `GET /api/proceso/periodos` | personal / admin | Procesos por período con fase, conteos y aulas disponibles. |
 | `GET /api/proceso/:id` | jefe, director, asistente, admin | Cursos y secciones del período con docente, aula y alertas de cruce. |
 | `GET /api/proceso/docentes?periodo=` | jefe, director, asistente | Docentes con sus horas asignadas. |
 | `POST /api/proceso/:id/secciones` · `PUT/DELETE /api/proceso/secciones/:id` · `POST /api/proceso/:id/copiar` | jefe (fase 1) | Crear, editar, eliminar secciones o copiar un período base. |
 | `PUT /api/proceso/secciones/:id/docente` | director (fase 2) | `id_docente`. |
 | `PUT /api/proceso/secciones/:id/aula` | asistente (fase 3) | `aula` y opcional `sesion` (índice) para asignar por sesión. |
-| `POST /api/proceso/:id/accion` | jefe, director, asistente | `enviar_director`, `devolver_jefe` (con `motivo`), `enviar_confirmacion`, `confirmar`, `enviar_docentes`, `establecer`, `iniciar_ajustes`, `cerrar`. |
+| `POST /api/proceso/:id/accion` | jefe, director, asistente | `enviar_director`, `devolver_jefe` (con `motivo`), `enviar_confirmacion`, `confirmar`, `enviar_docentes`, `iniciar_ajustes`, `cerrar` (el paso a la fase 5 es automático). |
 | `GET/POST /api/proceso/:id/solicitudes` | personal | Solicitudes de cambio (`id_seccion`, `tipo`: horario/docente/aula, `descripcion`, `propuesta`). |
 | `POST /api/proceso/solicitudes/:id/mensajes` · `POST .../resolver` | personal · rol destino | Mensajes del hilo; `accion` aprobar/rechazar con `respuesta` y `propuesta` alternativa opcional. |
 | `GET /api/docente/horario?periodo=` · `POST /api/docente/secciones/:id/confirmar` | docente | Horario del docente (desde la fase 4) y confirmación por sección. |

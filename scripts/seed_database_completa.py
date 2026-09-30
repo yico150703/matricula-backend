@@ -169,13 +169,57 @@ PERSONAL_DEMO = [
     ("jefedepartamentoescuelasistemas", "jefedepartamentoescuelasistemas@unfv.edu.pe", "Jefe de Departamento", "E.P. Ingeniería de Sistemas", "jefe", "Jefe2026!"),
     ("directorescuelasistemas", "directorescuelasistemas@unfv.edu.pe", "Director de Escuela", "E.P. Ingeniería de Sistemas", "director", "Director2026!"),
     ("asistenteescuelasistemas", "asistenteescuelasistemas@unfv.edu.pe", "Asistente de Escuela", "E.P. Ingeniería de Sistemas", "asistente", "Asistente2026!"),
-    ("jalvaradotorres", "jalvaradotorres@unfv.pe", "Juan Carlos", "Alvarado Torres", "docente", "Docente2026!"),
+    ("jalvaradot", "jalvaradot@unfv.edu.pe", "Juan Carlos", "Alvarado Torres", "docente", "Docente2026!"),
 ]
 ALUMNO_DEMO = ("20260001", "Ana", "Pérez")
 
 
 def cuentas_prueba_activas():
     return os.getenv("CUENTAS_PRUEBA", "true").strip().lower() not in ("false", "0", "no")
+
+
+USUARIOS_FIJOS = {"admin", "adminprueba", "jefedepartamentoescuelasistemas", "directorescuelasistemas", "asistenteescuelasistemas"}
+
+
+def migrar_usuarios_personal():
+    """Una sola vez: usuarios y correos del personal al formato UNFV (jalvaradot@unfv.edu.pe).
+    Las cuentas que aún tienen la contraseña inicial (= usuario) reciben como contraseña el usuario nuevo."""
+    from app.usuarios import base_usuario, correo_personal
+
+    meta = db.session.get(AppMeta, "usuarios_personal")
+    if meta and meta.valor == "v2":
+        return
+    fijos = USUARIOS_FIJOS | {os.getenv("ADMIN_USER", "admin").strip().lower()}
+    cuentas = Administrador.query.order_by(Administrador.id_admin).all()
+    ocupados = {a.usuario.lower() for a in cuentas}
+    cambios = 0
+    for a in cuentas:
+        if a.usuario.lower() in fijos:
+            if a.email and a.email.lower().endswith("@unfv.pe"):
+                a.email = a.email[: -len("unfv.pe")] + "unfv.edu.pe"
+            continue
+        base = base_usuario(a.nombres if a.nombres != "-" else "", a.apellidos or "")
+        if a.usuario == base or (a.usuario.startswith(base) and a.usuario[len(base):].isdigit()):
+            nuevo = a.usuario
+        else:
+            ocupados.discard(a.usuario.lower())
+            nuevo, n = base, 1
+            while nuevo in ocupados:
+                n += 1
+                nuevo = f"{base}{n}"
+            ocupados.add(nuevo)
+        if nuevo != a.usuario:
+            if a.debe_cambiar_password and check_password_hash(a.password_hash, a.usuario):
+                a.password_hash = generate_password_hash(nuevo)
+            a.usuario = nuevo
+            cambios += 1
+        a.email = correo_personal(a.usuario)
+    if meta:
+        meta.valor = "v2"
+    else:
+        db.session.add(AppMeta(clave="usuarios_personal", valor="v2"))
+    db.session.commit()
+    print(f"✓ Usuarios del personal en formato UNFV ({cambios} actualizados, correos @unfv.edu.pe).")
 
 
 def ensure_cuentas_prueba():
@@ -217,6 +261,38 @@ def ensure_cuentas_prueba():
     print("✓ Cuentas de prueba " + ("listas (contraseñas restablecidas)." if activas else "desactivadas (CUENTAS_PRUEBA=false)."))
 
 
+def _sin_tildes(t):
+    import unicodedata
+
+    return unicodedata.normalize("NFD", (t or "").lower()).encode("ascii", "ignore").decode().strip()
+
+
+def _parecidos(a, b):
+    """Iguales o con una sola letra distinta (Karin / Karen)."""
+    if a == b:
+        return True
+    if abs(len(a) - len(b)) > 1:
+        return False
+    if len(a) == len(b):
+        return sum(x != y for x, y in zip(a, b)) <= 1
+    corto, largo = sorted((a, b), key=len)
+    return any(largo[:i] + largo[i + 1:] == corto for i in range(len(largo)))
+
+
+def misma_persona(nombres, apellidos):
+    """Los horarios oficiales a veces escriben distinto al mismo docente (Julio / Julio Elmer, Karin / Karen):
+    mismos apellidos y primer nombre igual o casi igual."""
+    ape = _sin_tildes(apellidos)
+    primero = (_sin_tildes(nombres).split() or [""])[0]
+    for d in Administrador.query.filter_by(rol="docente").all():
+        if _sin_tildes(d.apellidos) != ape:
+            continue
+        otro = (_sin_tildes(d.nombres if d.nombres != "-" else "").split() or [""])[0]
+        if _parecidos(primero, otro):
+            return d
+    return None
+
+
 def ensure_docentes():
     """Crea una cuenta de docente por cada profesor de los horarios oficiales y la vincula a sus secciones."""
     from app.usuarios import base_usuario, correo_personal, separar_nombre_horario, usuario_disponible
@@ -229,8 +305,9 @@ def ensure_docentes():
             continue
         nombres, apellidos = separar_nombre_horario(nombre)
         base = base_usuario(nombres, apellidos)
-        if base not in cache:
-            docente = Administrador.query.filter_by(usuario=base, rol="docente").first()
+        clave = (nombres.lower(), apellidos.lower())  # se identifica a la persona por su nombre, no por el usuario
+        if clave not in cache:
+            docente = misma_persona(nombres, apellidos)
             if not docente:
                 usuario = usuario_disponible(base)
                 docente = Administrador(usuario=usuario, email=correo_personal(usuario), nombres=nombres or "-", apellidos=apellidos, rol="docente",
@@ -238,8 +315,8 @@ def ensure_docentes():
                 db.session.add(docente)
                 db.session.flush()
                 creados += 1
-            cache[base] = docente
-        s.id_docente = cache[base].id_admin
+            cache[clave] = docente
+        s.id_docente = cache[clave].id_admin
     db.session.commit()
     if creados:
         print(f"✓ {creados} cuentas de docentes creadas desde los horarios (contraseña inicial = usuario).")
@@ -268,21 +345,24 @@ def ensure_procesos():
     db.session.commit()
 
 
-def ensure_periodo_planificacion():
-    """Período 2027-1 en planificación para iniciar el proceso de horarios (fase 1)."""
-    if PeriodoAcademico.query.filter_by(cod_per_acad="2027-1").first():
+def limpiar_periodo_automatico():
+    """Una sola vez: las versiones anteriores creaban solas el 2027-1 para probar. Ahora lo crea el administrador,
+    así que ese período de prueba se elimina si aún no tiene matrículas ni actas."""
+    from app.periodos_util import eliminar_periodo, puede_eliminarse
+
+    meta = db.session.get(AppMeta, "limpieza_2027_1")
+    if meta:
         return
-    nuevo = (db.session.query(db.func.max(PeriodoAcademico.unique_id)).scalar() or 0) + 1
-    db.session.add(PeriodoAcademico(unique_id=nuevo, cod_per_acad="2027-1", fec_inicio=date(2027, 3, 15), fec_fin=date(2027, 7, 30), estado="programacion"))
-    db.session.flush()
-    nuevo_h = (db.session.query(db.func.max(HorarioCab.id_horario)).scalar() or 0) + 1
-    db.session.add(HorarioCab(id_horario=nuevo_h, cod_per_acad="2027-1", cod_fac=1, cod_esc=1, corr_pe=1, fec_inicio=date(2027, 3, 15)))
-    db.session.flush()
-    for sem in range(1, 11):
-        db.session.add(HorarioDet(id_horario=nuevo_h, semestre_corr=sem, semestre_desc=f"Ciclo {sem}"))
-    db.session.add(ProcesoHorario(id_periodo=nuevo, fase=1, historial="[]"))
+    periodo = PeriodoAcademico.query.filter_by(cod_per_acad="2027-1").first()
+    if periodo:
+        ok, motivo = puede_eliminarse(periodo)
+        if ok:
+            eliminar_periodo(periodo)
+            print("✓ Período de prueba 2027-1 eliminado: el administrador lo creará desde su panel.")
+        else:
+            print(f"! No se eliminó el 2027-1 de prueba: {motivo}")
+    db.session.add(AppMeta(clave="limpieza_2027_1", valor="hecho"))
     db.session.commit()
-    print("✓ Período 2027-1 creado en planificación (fase 1 del proceso de horarios).")
 
 
 def version_catalogo():
@@ -332,10 +412,11 @@ def main(argv=None):
         else:
             print(f"✓ Catálogo {CATALOGO_VERSION} vigente: se conservan los datos existentes.")
         ensure_admin()
+        migrar_usuarios_personal()
         ensure_cuentas_prueba()
         ensure_docentes()
         ensure_procesos()
-        ensure_periodo_planificacion()
+        limpiar_periodo_automatico()
         print("✓ Base de datos lista.")
 
 

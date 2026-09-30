@@ -2,8 +2,6 @@
 import re
 import unicodedata
 
-from flask import current_app
-
 from .extensions import db
 from .models import Administrador
 
@@ -16,11 +14,39 @@ def _ascii(texto):
     return unicodedata.normalize("NFD", texto or "").encode("ascii", "ignore").decode()
 
 
+PARTICULAS = {"de", "del", "la", "las", "los", "y", "san", "santa"}
+DOMINIO_PERSONAL = "unfv.edu.pe"
+
+
+def _apellidos_en_bloques(apellidos):
+    """'Franco del Carpio' -> ['franco', 'delcarpio'] · 'De la Cruz Rojas' -> ['delacruz', 'rojas']."""
+    bloques, pendiente = [], ""
+    for p in _ascii(apellidos).lower().split():
+        p = re.sub(r"[^a-z]", "", p)
+        if not p:
+            continue
+        if p in PARTICULAS:
+            pendiente += p
+            continue
+        bloques.append(pendiente + p)
+        pendiente = ""
+    if pendiente:
+        bloques.append(pendiente)
+    return bloques
+
+
 def base_usuario(nombres, apellidos):
-    """Juan Carlos + Alvarado Torres -> jalvaradotorres"""
-    inicial = (_ascii(nombres).strip()[:1] or "").lower()
-    ape = re.sub(r"[^a-z]", "", "".join(_ascii(apellidos).lower().split()))
-    return re.sub(r"[^a-z0-9]", "", inicial + ape) or "usuario"
+    """Formato UNFV: inicial del primer nombre + apellido paterno + inicial del materno.
+    José Alvarado Torres -> jalvaradot · Juan Carlos Franco del Carpio -> jfrancoc"""
+    inicial = re.sub(r"[^a-z]", "", _ascii(nombres).lower())[:1]
+    bloques = _apellidos_en_bloques(apellidos)
+    paterno = bloques[0] if bloques else ""
+    # La inicial del materno es la de su palabra principal (del Carpio -> c)
+    materno = ""
+    if len(bloques) > 1:
+        ultima = _ascii(apellidos).lower().split()[-1]
+        materno = re.sub(r"[^a-z]", "", ultima)[:1] or bloques[1][:1]
+    return (inicial + paterno + materno) or "usuario"
 
 
 def usuario_disponible(base):
@@ -32,7 +58,8 @@ def usuario_disponible(base):
 
 
 def correo_personal(usuario):
-    return f"{usuario}@{current_app.config['STAFF_EMAIL_DOMAIN']}"
+    """Todo el personal usa el dominio institucional unfv.edu.pe."""
+    return f"{usuario}@{DOMINIO_PERSONAL}"
 
 
 def separar_nombre_horario(texto):

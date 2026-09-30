@@ -26,8 +26,6 @@ services:
         value: "10"
       - key: SESSION_HOURS
         value: "2"
-      - key: STAFF_EMAIL_DOMAIN
-        value: unfv.pe
       - key: DIAS_AJUSTE_HORARIO
         value: "14"
       - key: CUENTAS_PRUEBA

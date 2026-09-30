@@ -51,6 +51,31 @@ CONTRAPARTE = {"jefe": "director", "director": "jefe", "asistente": "director"}
 TIPO_POR_ROL = {"jefe": "horario", "director": "docente", "asistente": "aula"}
 FASE_EDICION = {"jefe": 1, "director": 2, "asistente": 3}
 HORA_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+# Hora académica UNFV: 50 minutos. Las clases se programan en bloques desde las 08:00 hasta las 22:10.
+MINUTOS_HORA_ACADEMICA = 50
+BLOQUES = [f"{(480 + 50 * i) // 60:02d}:{(480 + 50 * i) % 60:02d}" for i in range(18)]
+
+
+def minutos_semana(sesiones):
+    return sum((int(f[:2]) * 60 + int(f[3:])) - (int(i[:2]) * 60 + int(i[3:])) for _d, i, f in sesiones)
+
+
+def horas_plan(curso):
+    """Horas semanales del plan de estudios (HT + HP): el total del semestre es (HT+HP) × 16."""
+    return (curso.ht or 0) + (curso.hp or 0) if curso else 0
+
+
+def verificar_horas_plan(curso, sesiones):
+    """Una sección debe dictar al menos las horas semanales del plan (puede tener horas extra de práctica)."""
+    requeridas = horas_plan(curso)
+    if requeridas and minutos_semana(sesiones) < requeridas * MINUTOS_HORA_ACADEMICA:
+        tiene = minutos_semana(sesiones) // MINUTOS_HORA_ACADEMICA
+        raise ApiError(
+            "horas_insuficientes",
+            f"{curso.den_curso} tiene {curso.ht} h de teoría y {curso.hp} h de práctica por semana en el plan: programa al menos "
+            f"{requeridas} bloques de 50 min (ahora hay {tiene}).",
+            400,
+        )
 AULAS_CATALOGO = [
     "B-503", "B-504", "B-505", "D-203", "D-204", "D-308",
     "LAB 1", "LAB 2", "LAB 3", "LAB 4", "LAB 5", "LAB 6", "LAB ELEC", "LAB FISICA",
@@ -96,6 +121,20 @@ def cambiar_fase(proceso, nueva, user, accion):
     else:
         periodo.estado = "programacion"
     registrar(proceso, user, accion)
+
+
+def avanzar_si_todos_confirmaron(proceso, periodo, user):
+    """Fase 4 -> 5 automática: cuando todos los docentes confirmaron y no quedan solicitudes abiertas,
+    los horarios quedan establecidos y se abre la matrícula de los alumnos."""
+    if proceso.fase != 4:
+        return False
+    secciones = secciones_periodo(periodo)
+    if not secciones or any(x.estado_docente != "confirmado" for x in secciones):
+        return False
+    if SolicitudCambio.query.filter_by(id_periodo=periodo.unique_id, estado="pendiente").first():
+        return False
+    cambiar_fase(proceso, 5, user, "Todos los docentes confirmaron: horarios establecidos y matrícula abierta automáticamente")
+    return True
 
 
 def periodo_o_404(id_periodo):
@@ -199,8 +238,12 @@ def validar_sesiones(sesiones):
         ini, fin = str(s.get("hora_inicio") or s.get("inicio") or ""), str(s.get("hora_fin") or s.get("fin") or "")
         if not (1 <= dia <= 6) or not HORA_RE.match(ini) or not HORA_RE.match(fin):
             raise ApiError("datos_invalidos", "Usa días de lunes a sábado y horas en formato HH:MM.", 400)
-        if not ("07:00" <= ini < fin <= "22:30"):
-            raise ApiError("datos_invalidos", "Las clases deben estar entre 07:00 y 22:30 y la hora de fin ser mayor al inicio.", 400)
+        if ini not in BLOQUES or fin not in BLOQUES or not ini < fin:
+            raise ApiError(
+                "hora_fuera_de_bloque",
+                f"Las horas van en bloques de 50 minutos desde las 08:00 (08:00, 08:50, 09:40, …, {BLOQUES[-1]}) y el fin debe ser mayor al inicio.",
+                400,
+            )
         limpias.append((dia, ini, fin))
     for i, a in enumerate(limpias):
         for b in limpias[i + 1:]:
@@ -381,6 +424,7 @@ def crear_seccion(id_periodo):
     if not 5 <= cupo <= 80:
         raise ApiError("datos_invalidos", "La capacidad debe estar entre 5 y 80.", 400)
     limpias = validar_sesiones(data.get("sesiones"))
+    verificar_horas_plan(curso, limpias)
 
     cab = cabecera(periodo)
     hc = db.session.get(HorarioDCurso, (cab.id_horario, curso.semestre, curso.cod_curso))
@@ -419,7 +463,9 @@ def editar_seccion(id_seccion):
     if "cupo" in data:
         s.cupo_maximo = s.cupo_disponible = max(5, min(80, entero(data["cupo"], "cupo")))
     if "sesiones" in data:
-        aplicar_sesiones(s, validar_sesiones(data["sesiones"]))
+        limpias = validar_sesiones(data["sesiones"])
+        verificar_horas_plan(s.curso, limpias)
+        aplicar_sesiones(s, limpias)
     registrar(proceso, user, f"Editó la sección {s.cod_seccion} de {s.curso.den_curso if s.curso else s.cod_curso}")
     db.session.commit()
     return jsonify(seccion={**seccion_dict(s), "avisos": cruces_de_seccion(s, secciones_periodo(periodo))})
@@ -580,6 +626,8 @@ def accion(id_periodo):
         for s in secciones:
             s.estado_docente = "pendiente" if s.id_docente else "confirmado"
         cambiar_fase(proceso, 4, user, "Publicó los horarios para la confirmación de los docentes")
+        db.session.flush()
+        avanzar_si_todos_confirmaron(proceso, periodo, user)
     elif acc == "establecer":
         exigir("director", (4,))
         pendientes = [s for s in secciones if s.estado_docente != "confirmado"]
@@ -646,7 +694,9 @@ def validar_propuesta(tipo, propuesta, s, periodo):
     if not propuesta:
         return None
     if tipo == "horario":
-        return {"sesiones": [{"dia": d, "hora_inicio": i, "hora_fin": f} for d, i, f in validar_sesiones(propuesta.get("sesiones"))]}
+        limpias = validar_sesiones(propuesta.get("sesiones"))
+        verificar_horas_plan(s.curso, limpias)
+        return {"sesiones": [{"dia": d, "hora_inicio": i, "hora_fin": f} for d, i, f in limpias]}
     if tipo == "docente":
         d = Administrador.query.filter_by(id_admin=entero(propuesta.get("id_docente"), "id_docente", por_defecto=0), rol="docente", activo=True).first()
         if not d:
@@ -819,6 +869,8 @@ def resolver(id_sol):
     sol.id_resuelto_por = user.id_admin
     sol.resuelto_en = datetime.utcnow()
     registrar(proceso, user, f"{'Aprobó' if sol.estado == 'aprobada' else 'Rechazó'} el cambio de {sol.tipo} en {nombre} ({s.cod_seccion})")
+    db.session.flush()
+    avanzar_si_todos_confirmaron(proceso, periodo, user)
     db.session.commit()
     db.session.refresh(sol)
     return jsonify(solicitud=solicitud_dict(sol))
@@ -863,5 +915,7 @@ def confirmar_seccion(id_seccion):
         raise ApiError("solicitud_abierta", "Tienes un reporte pendiente en esta sección; espera su respuesta.", 409)
     s.estado_docente = "confirmado"
     registrar(proceso, user, f"Confirmó su horario de {s.curso.den_curso if s.curso else s.cod_curso} ({s.cod_seccion})")
+    db.session.flush()
+    avanzo = avanzar_si_todos_confirmaron(proceso, periodo, user)
     db.session.commit()
-    return jsonify(seccion=seccion_dict(s))
+    return jsonify(seccion=seccion_dict(s), fase=proceso.fase, matricula_abierta=avanzo or proceso.fase in (5, 6))

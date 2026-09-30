@@ -32,7 +32,6 @@ class Config:
     SMTP_USER = os.getenv("SMTP_USER", "")
     SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
     MAIL_FROM = os.getenv("MAIL_FROM", "")
-    STAFF_EMAIL_DOMAIN = os.getenv("STAFF_EMAIL_DOMAIN", "unfv.pe")
     DIAS_AJUSTE_HORARIO = int(os.getenv("DIAS_AJUSTE_HORARIO", "14"))
     MAX_CONTENT_LENGTH = 6 * 1024 * 1024  # PDF del acta de notas: hasta 5 MB
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_recycle": 280}

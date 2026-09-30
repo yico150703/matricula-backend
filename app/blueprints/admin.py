@@ -5,8 +5,10 @@ from flask import Blueprint, jsonify, request
 from sqlalchemy import func
 from werkzeug.security import generate_password_hash
 
+from ..calendario import fechas_para
 from ..errors import ApiError
 from ..extensions import db
+from ..periodos_util import eliminar_periodo, puede_eliminarse
 from ..models import ROLES_PERSONAL, Administrador, Alumno, Matricula, MatriculaDetalle, PeriodoAcademico, ProcesoHorario, SolicitudPassword
 from ..usuarios import base_usuario, correo_personal, usuario_disponible
 from .proceso import cabecera
@@ -38,7 +40,10 @@ def resumen():
             .join(Matricula, Matricula.nro_matricula == MatriculaDetalle.nro_matricula)
             .where(Matricula.id_periodo == periodo.unique_id, MatriculaDetalle.estado == "matriculado")
         ) or 0
-        periodos.append({**periodo.to_dict(), "matriculas": matriculas, "cursos_matriculados": cursos, "fase": proceso.fase if proceso else None})
+        periodos.append({
+            **periodo.to_dict(), "matriculas": matriculas, "cursos_matriculados": cursos,
+            "fase": proceso.fase if proceso else None, "eliminable": puede_eliminarse(periodo)[0],
+        })
 
     return jsonify(
         alumnos={
@@ -138,7 +143,7 @@ def listar_personal():
 @admin_required
 def crear_personal():
     """Nombres + apellidos + rol. Usuario: inicial del nombre + apellidos (jalvaradotorres);
-    correo: usuario@STAFF_EMAIL_DOMAIN; contraseña inicial = usuario (se cambia al ingresar)."""
+    correo: usuario@unfv.edu.pe; contraseña inicial = usuario (se cambia al ingresar)."""
     data = request.get_json(silent=True) or {}
     nombres = _nombre(data.get("nombres"), "nombres")
     apellidos = _nombre(data.get("apellidos"), "apellidos")
@@ -200,12 +205,12 @@ def crear_periodo():
     if PeriodoAcademico.query.filter_by(cod_per_acad=cod).first():
         raise ApiError("periodo_duplicado", f"El período {cod} ya existe.", 409)
     try:
-        inicio = date.fromisoformat(data.get("fecha_inicio"))
-        fin = date.fromisoformat(data.get("fecha_fin"))
+        inicio = date.fromisoformat(data["fecha_inicio"]) if data.get("fecha_inicio") else None
     except (TypeError, ValueError):
-        raise ApiError("datos_invalidos", "Indica las fechas de inicio y fin de clases.", 400)
-    if fin <= inicio:
-        raise ApiError("datos_invalidos", "La fecha de fin debe ser posterior al inicio.", 400)
+        raise ApiError("datos_invalidos", "La fecha de inicio no es válida.", 400)
+    # El fin se calcula solo (16 semanas); el período 2 empieza tras la semana de vacaciones del período 1
+    primero = PeriodoAcademico.query.filter_by(cod_per_acad=f"{cod[:4]}-1").first() if cod.endswith("-2") else None
+    inicio, fin = fechas_para(cod, inicio, primero.fec_inicio if primero else None)
     nuevo = (db.session.query(func.max(PeriodoAcademico.unique_id)).scalar() or 0) + 1
     periodo = PeriodoAcademico(unique_id=nuevo, cod_per_acad=cod, fec_inicio=inicio, fec_fin=fin, estado="programacion")
     db.session.add(periodo)
@@ -214,3 +219,14 @@ def crear_periodo():
     db.session.add(ProcesoHorario(id_periodo=nuevo, fase=1, historial="[]"))
     db.session.commit()
     return jsonify(periodo=periodo.to_dict()), 201
+
+
+@bp.delete("/admin/periodos/<int:id_periodo>")
+@admin_required
+def borrar_periodo(id_periodo):
+    """Elimina un período en programación sin matrículas (por ejemplo, para repetir una prueba)."""
+    periodo = db.get_or_404(PeriodoAcademico, id_periodo)
+    cod = periodo.cod_per_acad
+    eliminar_periodo(periodo)
+    db.session.commit()
+    return jsonify(message=f"Período {cod} eliminado.")
