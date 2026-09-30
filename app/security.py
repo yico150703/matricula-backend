@@ -49,6 +49,44 @@ def current_admin_id():
         return None
 
 
+# Con la contraseña inicial solo se puede consultar el perfil y cambiarla (OWASP: forzar el cambio en el servidor)
+ENDPOINTS_SIN_CAMBIO = {"auth.me", "auth.change_password"}
+
+
+def usuario_de_sesion():
+    """Devuelve (usuario, rol) del token actual comprobando que la cuenta siga activa y con el mismo rol."""
+    from .extensions import db
+    from .models import Administrador, Alumno
+
+    rol = current_role()
+    if rol in ROLES_STAFF:
+        admin = db.session.get(Administrador, current_admin_id())
+        if not admin or not admin.activo:
+            raise ApiError("sesion_invalida", "Tu cuenta está desactivada. Vuelve a iniciar sesión.", 401)
+        if admin.rol != rol:
+            raise ApiError("sesion_invalida", "Tu rol cambió. Vuelve a iniciar sesión.", 401)
+        return admin, admin.rol
+    alumno = db.session.get(Alumno, get_jwt_identity())
+    if not alumno:
+        raise ApiError("sesion_invalida", "El alumno de esta sesión ya no existe.", 401)
+    if alumno.estado != "activo":
+        raise ApiError("sesion_invalida", "Tu cuenta está inactiva. Comunícate con la Oficina de Matrícula.", 401)
+    return alumno, "alumno"
+
+
+def proteger_sesion(endpoint):
+    """Se ejecuta antes de cada petición con token: cuenta activa, rol vigente y cambio de contraseña obligatorio."""
+    try:
+        verify_jwt_in_request(optional=True)
+    except Exception:
+        return  # token vencido o inválido: lo responde el propio endpoint
+    if not get_jwt():
+        return
+    user, _rol = usuario_de_sesion()
+    if user.debe_cambiar_password and endpoint not in ENDPOINTS_SIN_CAMBIO:
+        raise ApiError("debe_cambiar_password", "Debes cambiar tu contraseña inicial antes de continuar.", 403)
+
+
 def require_self_or_admin(cod_alumno, message="Solo puede consultar su propia información académica."):
     """El alumno solo accede a sus datos; el administrador accede a todos."""
     if is_admin():

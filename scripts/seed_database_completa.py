@@ -20,7 +20,7 @@ from decimal import Decimal
 from pathlib import Path
 import sys
 import pandas as pd
-from werkzeug.security import generate_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -97,6 +97,7 @@ NEW_COLUMNS = {
         "debe_cambiar_password": "BOOLEAN NOT NULL DEFAULT FALSE",
         "email_personal": "VARCHAR(254)",
         "telefono": "VARCHAR(20)",
+        "cuenta_prueba": "BOOLEAN NOT NULL DEFAULT FALSE",
     },
     "solicitud_cambio": {
         "anterior": "VARCHAR(300)",
@@ -109,6 +110,7 @@ NEW_COLUMNS = {
     "administrador": {
         "rol": "VARCHAR(20) NOT NULL DEFAULT 'admin'",
         "apellidos": "VARCHAR(150)",
+        "cuenta_prueba": "BOOLEAN NOT NULL DEFAULT FALSE",
     },
     "matricula_detalle": {
         "n1": "NUMERIC(4,2)",
@@ -159,50 +161,60 @@ def ensure_admin():
     print(f"✓ Administrador '{usuario}' creado (debe cambiar la contraseña al ingresar).")
 
 
-def ensure_demo_student():
-    if db.session.get(Alumno, "20260001"):
-        return
-    email = "20260001@unfv.edu.pe"
-    if Alumno.query.filter_by(email=email).first():
-        return
-    db.session.add(Alumno(
-        cod_alumno="20260001",
-        nombres="Ana",
-        apellidos="Pérez",
-        email=email,
-        password_hash=generate_password_hash("20260001"),
-        cod_fac=1,
-        cod_esc=1,
-        corr_pe=1,  # Plan 2019
-        estado="activo",
-        fecha_ingreso=date(2026, 3, 1),
-        debe_cambiar_password=True,
-    ))
-    db.session.commit()
-    print("✓ Alumno demo 20260001 creado (contraseña inicial = código).")
-
-
-# Cuentas de prueba (se muestran en el inicio de sesión). Solo se crean si no existen:
-# si alguien cambia la contraseña, se respeta.
+# Cuentas de prueba compartidas (se muestran en el inicio de sesión). En cada arranque se crean o se
+# reparan (contraseña conocida, activas, sin cambio obligatorio) para que nadie deje a los demás sin acceso.
+# Su contraseña no se puede cambiar desde el sistema. Con CUENTAS_PRUEBA=false se desactivan.
 PERSONAL_DEMO = [
+    ("adminprueba", "adminprueba@unfv.edu.pe", "Administrador", "de Prueba", "admin", "Admin2026!"),
     ("jefedepartamentoescuelasistemas", "jefedepartamentoescuelasistemas@unfv.edu.pe", "Jefe de Departamento", "E.P. Ingeniería de Sistemas", "jefe", "Jefe2026!"),
     ("directorescuelasistemas", "directorescuelasistemas@unfv.edu.pe", "Director de Escuela", "E.P. Ingeniería de Sistemas", "director", "Director2026!"),
     ("asistenteescuelasistemas", "asistenteescuelasistemas@unfv.edu.pe", "Asistente de Escuela", "E.P. Ingeniería de Sistemas", "asistente", "Asistente2026!"),
     ("jalvaradotorres", "jalvaradotorres@unfv.pe", "Juan Carlos", "Alvarado Torres", "docente", "Docente2026!"),
 ]
+ALUMNO_DEMO = ("20260001", "Ana", "Pérez")
 
 
-def ensure_personal_demo():
+def cuentas_prueba_activas():
+    return os.getenv("CUENTAS_PRUEBA", "true").strip().lower() not in ("false", "0", "no")
+
+
+def ensure_cuentas_prueba():
+    activas = cuentas_prueba_activas()
     for usuario, email, nombres, apellidos, rol, clave in PERSONAL_DEMO:
-        existente = Administrador.query.filter_by(usuario=usuario).first()
-        if existente:
-            if existente.apellidos == "Escuela de Sistemas":  # nombre de prueba anterior
-                existente.apellidos = apellidos
-            continue
-        db.session.add(Administrador(usuario=usuario, email=email, nombres=nombres, apellidos=apellidos, rol=rol,
-                                     password_hash=generate_password_hash(clave), activo=True, debe_cambiar_password=False))
-        print(f"✓ Cuenta de prueba {rol}: {email}")
+        cuenta = Administrador.query.filter_by(usuario=usuario).first()
+        if not cuenta:
+            if not activas:
+                continue
+            cuenta = Administrador(usuario=usuario, email=email, nombres=nombres, apellidos=apellidos, rol=rol)
+            db.session.add(cuenta)
+            print(f"✓ Cuenta de prueba {rol}: {email}")
+        if cuenta.apellidos == "Escuela de Sistemas":  # nombre de prueba anterior
+            cuenta.apellidos = apellidos
+        cuenta.cuenta_prueba = True
+        cuenta.activo = activas
+        if activas:
+            cuenta.rol = rol
+            cuenta.email = email
+            cuenta.debe_cambiar_password = False
+            if not check_password_hash(cuenta.password_hash or "", clave):
+                cuenta.password_hash = generate_password_hash(clave)
+
+    codigo, nombres, apellidos = ALUMNO_DEMO
+    alumno = db.session.get(Alumno, codigo)
+    if not alumno and activas and not Alumno.query.filter_by(email=f"{codigo}@unfv.edu.pe").first():
+        alumno = Alumno(cod_alumno=codigo, nombres=nombres, apellidos=apellidos, email=f"{codigo}@unfv.edu.pe",
+                        password_hash="", cod_fac=1, cod_esc=1, corr_pe=1, estado="activo", fecha_ingreso=date(2026, 3, 1))
+        db.session.add(alumno)
+        print(f"✓ Alumno de prueba {codigo}.")
+    if alumno:
+        alumno.cuenta_prueba = True
+        alumno.estado = "activo" if activas else "inactivo"
+        if activas:
+            alumno.debe_cambiar_password = False
+            if not check_password_hash(alumno.password_hash or "", codigo):
+                alumno.password_hash = generate_password_hash(codigo)
     db.session.commit()
+    print("✓ Cuentas de prueba " + ("listas (contraseñas restablecidas)." if activas else "desactivadas (CUENTAS_PRUEBA=false)."))
 
 
 def ensure_docentes():
@@ -234,10 +246,25 @@ def ensure_docentes():
 
 
 def ensure_procesos():
+    from app.fechas import hoy
+
     for p in PeriodoAcademico.query.filter(PeriodoAcademico.estado != "historico").all():
-        if not db.session.get(ProcesoHorario, p.unique_id):
+        proceso = db.session.get(ProcesoHorario, p.unique_id)
+        if not proceso:
             fase = 5 if p.estado == "en_curso" else 7 if p.estado == "cerrado" else 1
-            db.session.add(ProcesoHorario(id_periodo=p.unique_id, fase=fase, confirmado_jefe=fase >= 4, confirmado_director=fase >= 4, historial="[]"))
+            proceso = ProcesoHorario(id_periodo=p.unique_id, fase=fase, confirmado_jefe=fase >= 4, confirmado_director=fase >= 4, historial="[]")
+            db.session.add(proceso)
+        # Un período cuyo fin ya pasó queda cerrado (las bases antiguas dejaban 2026-1 "en curso")
+        if p.fec_fin and p.fec_fin < hoy() and (proceso.fase < 7 or p.estado != "cerrado"):
+            proceso.fase, p.estado = 7, "cerrado"
+            print(f"✓ Período {p.cod_per_acad} cerrado: terminó el {p.fec_fin.isoformat()}.")
+        # Secciones ya establecidas (fase 5+) no esperan confirmación docente
+        if proceso.fase >= 5:
+            cab = HorarioCab.query.filter_by(cod_per_acad=p.cod_per_acad).first()
+            if cab:
+                db.session.query(HorarioDCSeccion).filter(
+                    HorarioDCSeccion.id_horario == cab.id_horario, HorarioDCSeccion.estado_docente == "pendiente"
+                ).update({HorarioDCSeccion.estado_docente: "confirmado"}, synchronize_session=False)
     db.session.commit()
 
 
@@ -277,6 +304,7 @@ def limpiar_catalogo_anterior():
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reset", action="store_true", help="Borra toda la base y la vuelve a poblar.")
+    parser.add_argument("--reemplazar-catalogo", action="store_true", help="Reemplaza cursos y horarios si cambió CATALOGO_VERSION (borra matrículas de prueba).")
     args = parser.parse_args(argv)
 
     app = create_app()
@@ -285,8 +313,16 @@ def main(argv=None):
             reset_database()
         ensure_schema()
         actual = version_catalogo()
-        if actual != CATALOGO_VERSION:
-            if db.session.query(Curso).first() is not None:
+        hay_datos = db.session.query(Curso).first() is not None
+        permitir = args.reemplazar_catalogo or os.getenv("REEMPLAZAR_CATALOGO", "").strip() == CATALOGO_VERSION
+        if actual != CATALOGO_VERSION and hay_datos and not permitir:
+            # Nunca se borran matrículas ni notas en un arranque normal
+            print(
+                f"! El catálogo de la base ({actual or 'sin versión'}) no es {CATALOGO_VERSION}. No se modificó nada: "
+                f"para reemplazarlo ejecuta el script con --reemplazar-catalogo o define REEMPLAZAR_CATALOGO={CATALOGO_VERSION}."
+            )
+        elif actual != CATALOGO_VERSION:
+            if hay_datos:
                 limpiar_catalogo_anterior()
             seed_catalog()
             meta = db.session.get(AppMeta, "catalogo") or AppMeta(clave="catalogo", valor="")
@@ -296,8 +332,7 @@ def main(argv=None):
         else:
             print(f"✓ Catálogo {CATALOGO_VERSION} vigente: se conservan los datos existentes.")
         ensure_admin()
-        ensure_demo_student()
-        ensure_personal_demo()
+        ensure_cuentas_prueba()
         ensure_docentes()
         ensure_procesos()
         ensure_periodo_planificacion()

@@ -7,6 +7,7 @@ from sqlalchemy import func
 
 from .errors import ApiError
 from .extensions import db
+from .fechas import hoy
 from .models import (
     Alumno,
     CarritoItem,
@@ -253,6 +254,8 @@ def creditos(seccion):
 def validar_secciones(alumno, periodo, nuevas, ocupadas, *, verificar_cupo=True):
     """Valida que el alumno pueda llevar las secciones `nuevas`, sumadas a las `ocupadas`
     (ya matriculadas o en el carrito). Lanza ApiError con un mensaje claro si algo falla."""
+    if alumno.estado != "activo":
+        raise ApiError("alumno_no_activo", "El alumno no está habilitado para matricularse.", 403)
     proceso = db.session.get(ProcesoHorario, periodo.unique_id)
     if periodo.estado != "en_curso" or (proceso is not None and proceso.fase not in (5, 6)):
         raise ApiError(
@@ -260,6 +263,8 @@ def validar_secciones(alumno, periodo, nuevas, ocupadas, *, verificar_cupo=True)
             f"La matrícula de {periodo.cod_per_acad} aún no está abierta: los horarios se están programando.",
             409,
         )
+    if periodo.fec_fin and hoy() > periodo.fec_fin:
+        raise ApiError("periodo_terminado", f"El período {periodo.cod_per_acad} ya terminó: no admite matrículas.", 409)
 
     aprobados, en_curso, _ = course_sets(alumno)
     reqs = prerequisitos(alumno)

@@ -11,7 +11,7 @@ from ..errors import ApiError
 from ..extensions import db
 from ..mailer import mail_configured, send_mail
 from ..models import Administrador, Alumno, SolicitudPassword
-from ..security import current_admin_id, is_staff, token_for_admin, token_for_alumno, validate_new_password
+from ..security import current_admin_id, is_staff, token_for_admin, token_for_alumno, usuario_de_sesion, validate_new_password
 
 bp = Blueprint("auth", __name__)
 
@@ -27,17 +27,25 @@ def _session_payload(user, token, rol):
 
 
 def _current_user():
-    if is_staff():
-        admin = db.session.get(Administrador, current_admin_id())
-        if not admin or not admin.activo:
-            raise ApiError("sesion_invalida", "La cuenta no está disponible.", 401)
-        if admin.rol != get_jwt().get("rol"):
-            raise ApiError("sesion_invalida", "Tu rol cambió. Vuelve a iniciar sesión.", 401)
-        return admin, admin.rol
-    alumno = db.session.get(Alumno, get_jwt_identity())
-    if not alumno:
-        raise ApiError("sesion_invalida", "El alumno de esta sesión ya no existe.", 401)
-    return alumno, "alumno"
+    return usuario_de_sesion()
+
+
+def correo_en_uso(email, excepto_admin=None):
+    """Un correo identifica a una sola cuenta (personal o alumno)."""
+    email = (email or "").strip().lower()
+    q = Administrador.query.filter(db.func.lower(Administrador.email) == email)
+    if excepto_admin:
+        q = q.filter(Administrador.id_admin != excepto_admin)
+    return q.first() is not None or Alumno.query.filter(db.func.lower(Alumno.email) == email).first() is not None
+
+
+def _no_cuenta_prueba(user):
+    if getattr(user, "cuenta_prueba", False):
+        raise ApiError(
+            "cuenta_prueba",
+            "Esta es una cuenta de prueba compartida: sus datos y contraseña no se pueden cambiar para que todos puedan seguir entrando.",
+            403,
+        )
 
 
 @bp.post("/auth/login")
@@ -49,10 +57,11 @@ def login():
     if not raw_user or not password:
         raise ApiError("credenciales_invalidas", "Usuario y contraseña son obligatorios.", 400)
 
-    admin = Administrador.query.filter(
+    candidatos = Administrador.query.filter(
         (db.func.lower(Administrador.usuario) == raw_user.lower()) | (db.func.lower(Administrador.email) == raw_user.lower())
-    ).first()
-    if admin and check_password_hash(admin.password_hash, password):
+    ).all()
+    admin = next((a for a in candidatos if check_password_hash(a.password_hash, password)), None)
+    if admin:
         if not admin.activo:
             raise ApiError("usuario_inactivo", "Tu cuenta está desactivada. Comunícate con el administrador del sistema.", 403)
         return jsonify(_session_payload(admin, token_for_admin(admin), admin.rol))
@@ -80,6 +89,7 @@ def me():
 @jwt_required()
 def change_password():
     user, rol = _current_user()
+    _no_cuenta_prueba(user)
     data = request.get_json(silent=True) or {}
     actual = str(data.get("password_actual") or "")
     nueva = str(data.get("password_nueva") or "")
@@ -100,6 +110,7 @@ def change_password():
 def update_profile():
     """Datos de contacto que el propio usuario puede editar (no afectan su situación académica)."""
     user, rol = _current_user()
+    _no_cuenta_prueba(user)
     data = request.get_json(silent=True) or {}
     if rol == "alumno":
         if "email_personal" in data:
@@ -122,6 +133,8 @@ def update_profile():
             value = str(data.get("email") or "").strip().lower() or None
             if value and not EMAIL_RE.match(value):
                 raise ApiError("datos_invalidos", "El correo no tiene un formato válido.", 400)
+            if value and correo_en_uso(value, excepto_admin=user.id_admin):
+                raise ApiError("correo_en_uso", "Ese correo ya pertenece a otra cuenta.", 409)
             user.email = value
     db.session.commit()
     return jsonify(usuario=user.to_dict(), rol=rol)
@@ -180,13 +193,16 @@ def _mascara(email):
 def solicitar_recuperacion():
     """Siempre responde lo mismo para no revelar qué usuarios existen."""
     data = request.get_json(silent=True) or {}
-    user, rol = _buscar_usuario(data.get("usuario"))
+    user, rol = _buscar_usuario(str(data.get("usuario") or ""))
     respuesta = {
         "message": "Si el usuario existe, recibirás un enlace en tu correo o la Oficina de Matrícula atenderá tu solicitud.",
         "canal": "oficina",
     }
     if not user:
         return jsonify(respuesta)
+    if getattr(user, "cuenta_prueba", False):
+        # Las cuentas de prueba tienen contraseña fija (se muestra en el inicio de sesión)
+        return jsonify(message="Es una cuenta de prueba: su contraseña es la que aparece en el inicio de sesión.", canal="prueba")
 
     usuario = user.cod_alumno if rol == "alumno" else user.usuario
     reciente = SolicitudPassword.query.filter(

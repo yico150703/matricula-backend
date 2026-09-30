@@ -3,7 +3,7 @@ services:
     name: matricula-backend
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python scripts/seed_database_completa.py && gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    startCommand: python scripts/seed_database_completa.py; gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
@@ -30,6 +30,10 @@ services:
         value: unfv.pe
       - key: DIAS_AJUSTE_HORARIO
         value: "14"
+      - key: CUENTAS_PRUEBA
+        value: "true"
+      - key: ZONA_HORARIA
+        value: America/Lima
       - key: FRONTEND_URL
         sync: false
       - key: SMTP_HOST

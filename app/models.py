@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 from sqlalchemy import CheckConstraint, ForeignKey, ForeignKeyConstraint, UniqueConstraint
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import deferred, relationship
 from .extensions import db
 
 BIGINT = db.BigInteger().with_variant(db.Integer, "sqlite")
@@ -368,6 +368,8 @@ class Alumno(db.Model):
     debe_cambiar_password = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     email_personal = db.Column(db.String(254))
     telefono = db.Column(db.String(20))
+    # Cuenta de prueba compartida (se muestra en el login): su contraseña no se cambia y se restablece al arrancar
+    cuenta_prueba = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
 
     plan = relationship("PlanEstudio")
 
@@ -393,6 +395,7 @@ class Alumno(db.Model):
             "id_plan": self.corr_pe,
             "rol": "alumno",
             "debe_cambiar_password": bool(self.debe_cambiar_password),
+            "cuenta_prueba": bool(self.cuenta_prueba),
             "email_personal": self.email_personal,
             "telefono": self.telefono,
             "facultad": "FIIS - FACULTAD DE INGENIERÍA INDUSTRIAL Y DE SISTEMAS",
@@ -432,6 +435,7 @@ class Administrador(db.Model):
     activo = db.Column(db.Boolean, nullable=False, default=True)
     debe_cambiar_password = db.Column(db.Boolean, nullable=False, default=False)
     rol = db.Column(db.String(20), nullable=False, default="admin", server_default="admin")
+    cuenta_prueba = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
 
     @property
     def nombre_docente(self):
@@ -451,6 +455,7 @@ class Administrador(db.Model):
             "rol_nombre": ROLES_PERSONAL.get(self.rol, self.rol),
             "activo": self.activo,
             "debe_cambiar_password": bool(self.debe_cambiar_password),
+            "cuenta_prueba": bool(self.cuenta_prueba),
         }
 
 
@@ -589,3 +594,36 @@ class AppMeta(db.Model):
 Plan = PlanEstudio
 Seccion = HorarioDCSeccion
 Prerrequisito = MezclaCurso
+
+
+# 16. ACTAS DE NOTAS: el docente registra las notas de su salón y sube el acta firmada (PDF);
+# el Director de Escuela la aprueba y recién entonces las notas pasan al registro del alumno.
+ESTADOS_ACTA = {
+    "borrador": "Borrador del docente",
+    "enviada": "Enviada al Director",
+    "observada": "Observada por el Director",
+    "aprobada": "Aprobada",
+}
+
+
+class ActaNotas(db.Model):
+    __tablename__ = "acta_notas"
+    id = db.Column(BIGINT, primary_key=True, autoincrement=True)
+    id_seccion = db.Column(BIGINT, ForeignKey("horario_d_c_seccion.id_seccion", ondelete="CASCADE"), nullable=False, unique=True)
+    id_periodo = db.Column(BIGINT, ForeignKey("periodo_academico.unique_id", ondelete="CASCADE"), nullable=False, index=True)
+    id_docente = db.Column(db.Integer, ForeignKey("administrador.id_admin", ondelete="SET NULL"))
+    estado = db.Column(db.String(12), nullable=False, default="borrador")
+    notas = db.Column(db.Text, nullable=False, default="{}")  # {cod_alumno: {n1, n2, n3, sustitutorio, aplazado}}
+    archivo = deferred(db.Column(db.LargeBinary))  # PDF del acta firmada (se guarda en la base: el disco de Render es temporal)
+    archivo_nombre = db.Column(db.String(200))
+    archivo_bytes = db.Column(db.Integer)
+    enviado_en = db.Column(db.DateTime)
+    revisado_en = db.Column(db.DateTime)
+    id_revisor = db.Column(db.Integer, ForeignKey("administrador.id_admin", ondelete="SET NULL"))
+    observacion = db.Column(db.String(1000))
+    historial = db.Column(db.Text, nullable=False, default="[]")
+    actualizado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    seccion = relationship("HorarioDCSeccion")
+    docente = relationship("Administrador", foreign_keys=[id_docente])
+    revisor = relationship("Administrador", foreign_keys=[id_revisor])

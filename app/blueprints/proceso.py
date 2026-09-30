@@ -19,8 +19,9 @@ from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import selectinload
 
-from ..errors import ApiError
+from ..errors import ApiError, entero
 from ..extensions import db
+from ..fechas import hoy
 from ..models import (
     DIAS,
     FASES,
@@ -98,7 +99,7 @@ def cambiar_fase(proceso, nueva, user, accion):
 
 
 def periodo_o_404(id_periodo):
-    periodo = db.session.get(PeriodoAcademico, id_periodo)
+    periodo = db.session.get(PeriodoAcademico, id_periodo) if id_periodo else None
     if not periodo or periodo.estado == "historico":
         raise ApiError("periodo_no_encontrado", "El período no existe.", 404)
     return periodo
@@ -139,8 +140,8 @@ def fechas(periodo):
     return {
         "inicio_clases": periodo.fec_inicio.isoformat(),
         "limite_ajustes": limite.isoformat(),
-        "clases_iniciadas": date.today() >= periodo.fec_inicio,
-        "ajustes_vencidos": date.today() > limite,
+        "clases_iniciadas": hoy() >= periodo.fec_inicio,
+        "ajustes_vencidos": hoy() > limite,
     }
 
 
@@ -294,6 +295,8 @@ def seccion_del_periodo(id_seccion):
     if not s or not s.curso_programado:
         raise ApiError("seccion_no_encontrada", "La sección no existe.", 404)
     periodo = PeriodoAcademico.query.filter_by(cod_per_acad=s.curso_programado.horario_det.cabecera.cod_per_acad).first()
+    if not periodo or periodo.estado == "historico":
+        raise ApiError("seccion_no_encontrada", "La sección no existe.", 404)
     return s, periodo, obtener_proceso(periodo)
 
 
@@ -374,7 +377,7 @@ def crear_seccion(id_periodo):
     turno = str(data.get("turno") or "").upper()
     if turno not in ("M", "T", "N"):
         raise ApiError("datos_invalidos", "El turno debe ser M, T o N.", 400)
-    cupo = int(data.get("cupo") or 30)
+    cupo = entero(data.get("cupo"), "cupo", por_defecto=30)
     if not 5 <= cupo <= 80:
         raise ApiError("datos_invalidos", "La capacidad debe estar entre 5 y 80.", 400)
     limpias = validar_sesiones(data.get("sesiones"))
@@ -414,7 +417,7 @@ def editar_seccion(id_seccion):
             raise ApiError("datos_invalidos", "El turno debe ser M, T o N.", 400)
         s.turno = data["turno"]
     if "cupo" in data:
-        s.cupo_maximo = s.cupo_disponible = max(5, min(80, int(data["cupo"])))
+        s.cupo_maximo = s.cupo_disponible = max(5, min(80, entero(data["cupo"], "cupo")))
     if "sesiones" in data:
         aplicar_sesiones(s, validar_sesiones(data["sesiones"]))
     registrar(proceso, user, f"Editó la sección {s.cod_seccion} de {s.curso.den_curso if s.curso else s.cod_curso}")
@@ -490,7 +493,7 @@ def asignar_docente(id_seccion):
     id_docente = (request.get_json(silent=True) or {}).get("id_docente")
     docente = None
     if id_docente:
-        docente = Administrador.query.filter_by(id_admin=int(id_docente), rol="docente", activo=True).first()
+        docente = Administrador.query.filter_by(id_admin=entero(id_docente, "id_docente"), rol="docente", activo=True).first()
         if not docente:
             raise ApiError("docente_no_encontrado", "El docente no existe o está inactivo.", 404)
         verificar_docente(s, docente.id_admin, secciones_periodo(periodo))
@@ -593,6 +596,10 @@ def accion(id_periodo):
         cambiar_fase(proceso, 6, user, "Inició el período de ajustes de horario")
     elif acc == "cerrar":
         exigir("director", (5, 6))
+        # Las solicitudes que quedaron abiertas ya no se pueden aplicar
+        SolicitudCambio.query.filter_by(id_periodo=periodo.unique_id, estado="pendiente").update(
+            {"estado": "rechazada", "respuesta": "Se cerró el proceso de horarios.", "resuelto_en": datetime.utcnow()}, synchronize_session=False
+        )
         cambiar_fase(proceso, 7, user, "Cerró el proceso y la matrícula")
     else:
         raise ApiError("accion_desconocida", "Acción no reconocida.", 400)
@@ -641,7 +648,7 @@ def validar_propuesta(tipo, propuesta, s, periodo):
     if tipo == "horario":
         return {"sesiones": [{"dia": d, "hora_inicio": i, "hora_fin": f} for d, i, f in validar_sesiones(propuesta.get("sesiones"))]}
     if tipo == "docente":
-        d = Administrador.query.filter_by(id_admin=int(propuesta.get("id_docente") or 0), rol="docente", activo=True).first()
+        d = Administrador.query.filter_by(id_admin=entero(propuesta.get("id_docente"), "id_docente", por_defecto=0), rol="docente", activo=True).first()
         if not d:
             raise ApiError("docente_no_encontrado", "Elige un docente válido.", 400)
         return {"id_docente": d.id_admin, "docente": d.nombre_docente}
@@ -683,9 +690,15 @@ def crear_solicitud(id_periodo):
     periodo = periodo_o_404(id_periodo)
     proceso = obtener_proceso(periodo)
     data = request.get_json(silent=True) or {}
-    s = db.session.get(HorarioDCSeccion, data.get("id_seccion"))
+    try:
+        s = db.session.get(HorarioDCSeccion, int(data.get("id_seccion")))
+    except (TypeError, ValueError):
+        s = None
     if not s:
         raise ApiError("seccion_no_encontrada", "La sección no existe.", 404)
+    _s, periodo_seccion, _p = seccion_del_periodo(s.id_seccion)
+    if periodo_seccion.unique_id != periodo.unique_id:
+        raise ApiError("seccion_periodo_invalido", f"La sección no pertenece al período {periodo.cod_per_acad}.", 400)
     tipo = data.get("tipo")
     if tipo not in RESPONSABLE:
         raise ApiError("datos_invalidos", "El tipo debe ser horario, docente o aula.", 400)
@@ -732,8 +745,11 @@ def crear_solicitud(id_periodo):
 def mensaje(id_sol):
     user = yo()
     sol = db.get_or_404(SolicitudCambio, id_sol)
-    if user.id_admin != sol.id_autor and user.rol not in (sol.rol_destino, sol.rol_autor):
+    participa = user.id_admin == sol.id_autor or user.rol == sol.rol_destino or (user.rol == sol.rol_autor and user.rol != "docente")
+    if not participa:
         raise ApiError("acceso_denegado", "No participas en esta solicitud.", 403)
+    if sol.estado != "pendiente":
+        raise ApiError("solicitud_cerrada", "La solicitud ya fue resuelta.", 409)
     texto = str((request.get_json(silent=True) or {}).get("texto") or "").strip()
     if not texto:
         raise ApiError("datos_invalidos", "Escribe un mensaje.", 400)
@@ -760,6 +776,10 @@ def resolver(id_sol):
     periodo = db.session.get(PeriodoAcademico, sol.id_periodo)
     proceso = obtener_proceso(periodo)
     nombre = s.curso.den_curso if s.curso else s.cod_curso
+    if acc == "aprobar" and proceso.fase == 7:
+        raise ApiError("proceso_cerrado", "El proceso de horarios está cerrado: ya no se aplican cambios.", 409)
+    if acc == "aprobar" and proceso.fase == 6 and fechas(periodo)["ajustes_vencidos"]:
+        raise ApiError("ajustes_vencidos", "Venció el plazo de ajustes de horario.", 409)
 
     if acc == "rechazar":
         if len(respuesta) < 5:
@@ -779,7 +799,9 @@ def resolver(id_sol):
                 verificar_docente(s, s.id_docente, todas)
             verificar_aula(s, s.aula or SIN_ASIGNAR, todas)
         elif sol.tipo == "docente":
-            d = db.session.get(Administrador, propuesta["id_docente"])
+            d = Administrador.query.filter_by(id_admin=propuesta.get("id_docente"), rol="docente", activo=True).first()
+            if not d:
+                raise ApiError("docente_no_encontrado", "El docente propuesto ya no está disponible.", 409)
             verificar_docente(s, d.id_admin, todas)
             aplicar_docente(s, d)
         elif sol.tipo == "aula":

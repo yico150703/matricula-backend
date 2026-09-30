@@ -11,7 +11,7 @@ def create_app(config_object="config.Config"):
     jwt.init_app(app)
 
     raw_origin = app.config.get("FRONTEND_ORIGIN", "*")
-    cors_origins = "*" if (not raw_origin or raw_origin.strip() == "*") else [o.strip() for o in raw_origin.split(",") if o.strip()]
+    cors_origins = "*" if (not raw_origin or raw_origin.strip() == "*") else [o.strip().rstrip("/") for o in raw_origin.split(",") if o.strip()]
 
     # Los tokens viajan en la cabecera Authorization (sin cookies), por eso no se usan credenciales.
     cors.init_app(
@@ -23,6 +23,15 @@ def create_app(config_object="config.Config"):
     )
 
     register_error_handlers(app)
+
+    from flask import request
+
+    from .security import proteger_sesion
+
+    @app.before_request
+    def _proteger_sesion():
+        if request.method != "OPTIONS" and request.endpoint:
+            proteger_sesion(request.endpoint)
 
     @jwt.unauthorized_loader
     def missing_token(reason):
@@ -46,7 +55,8 @@ def create_app(config_object="config.Config"):
     from .blueprints.admin import bp as admin_bp
     from .blueprints.carrito import bp as carrito_bp
     from .blueprints.proceso import bp as proceso_bp
-    for blueprint in (auth_bp, planes_bp, cursos_bp, alumnos_bp, periodos_bp, secciones_bp, matriculas_bp, admin_bp, carrito_bp, proceso_bp):
+    from .blueprints.notas import bp as notas_bp
+    for blueprint in (auth_bp, planes_bp, cursos_bp, alumnos_bp, periodos_bp, secciones_bp, matriculas_bp, admin_bp, carrito_bp, proceso_bp, notas_bp):
         app.register_blueprint(blueprint, url_prefix="/api")
 
     @app.get("/health")

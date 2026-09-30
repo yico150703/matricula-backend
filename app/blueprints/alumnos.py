@@ -7,8 +7,9 @@ from sqlalchemy import or_
 from werkzeug.security import generate_password_hash
 
 from ..academico import calcular_notas, ciclo_actual, course_sets, notas_detalle, ocupacion, prerequisitos, purgar_carritos_vencidos, redondear
-from ..errors import ApiError
+from ..errors import ApiError, entero
 from ..extensions import db
+from ..fechas import hoy
 from ..models import (
     Alumno,
     Curso,
@@ -111,7 +112,7 @@ def create_alumno():
         cod_esc=plan.cod_esc,
         corr_pe=plan.corr_pe,
         estado="activo",
-        fecha_ingreso=date.today(),
+        fecha_ingreso=hoy(),
         debe_cambiar_password=True,
     )
     db.session.add(alumno)
@@ -313,6 +314,13 @@ def _seccion_historica(alumno, curso):
     return periodo, seccion
 
 
+ACTA_REQUERIDA = (
+    "nota_por_acta",
+    "Las notas de los cursos llevados en el sistema las registra el docente en su acta y las aprueba el Director de Escuela. "
+    "Aquí solo se registran notas de cursos llevados antes del sistema.",
+)
+
+
 @bp.post("/alumnos/<cod_alumno>/calificar")
 @admin_required
 def calificar_curso(cod_alumno):
@@ -356,14 +364,14 @@ def calificar_curso(cod_alumno):
         .first()
     )
 
+    # Las notas de los cursos llevados en el sistema las registra el docente y las aprueba el Director de Escuela
+    # (actas de notas). El administrador solo registra notas de cursos llevados antes del sistema (histórico).
+    if existing is not None and existing.matricula.periodo.estado != "historico":
+        raise ApiError(ACTA_REQUERIDA[0], ACTA_REQUERIDA[1], 403)
     detalle = existing
     if detalle is None:
-        id_periodo = data.get("id_periodo")
-        if id_periodo:
-            periodo = db.get_or_404(PeriodoAcademico, int(id_periodo))
-            seccion = _section_for_course(alumno, curso, periodo)
-            if not seccion:
-                raise ApiError("sin_seccion", f"{curso.den_curso} no tiene secciones en {periodo.cod_per_acad}.", 409)
+        if data.get("id_periodo"):
+            raise ApiError(ACTA_REQUERIDA[0], ACTA_REQUERIDA[1], 403)
         else:
             # Nota de un curso llevado antes del sistema: se guarda como registro histórico
             # (período cerrado aparte) para no ocupar créditos ni vacantes del semestre actual.

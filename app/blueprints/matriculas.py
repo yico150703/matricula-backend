@@ -56,8 +56,13 @@ def matricular(alumno, periodo, ids):
     if len(ids) != len(set(ids)) or not all(isinstance(i, int) for i in ids) or not ids:
         raise ApiError("secciones_invalidas", "Las secciones deben ser identificadores enteros no repetidos.", 400)
     try:
+        # Orden de bloqueo fijo (alumno y luego secciones por id) en matrícula y carrito: evita dobles matrículas
+        # simultáneas del mismo alumno y que dos alumnos tomen la última vacante a la vez.
+        db.session.execute(select(Alumno.cod_alumno).where(Alumno.cod_alumno == alumno.cod_alumno).with_for_update())
         secciones = (
-            db.session.execute(select(HorarioDCSeccion).where(HorarioDCSeccion.id_seccion.in_(ids)).with_for_update())
+            db.session.execute(
+                select(HorarioDCSeccion).where(HorarioDCSeccion.id_seccion.in_(ids)).order_by(HorarioDCSeccion.id_seccion).with_for_update()
+            )
             .scalars()
             .all()
         )
@@ -149,7 +154,13 @@ def withdraw_course(nro_matricula, id_seccion):
 @admin_required
 def record_grade(nro_matricula, id_seccion):
     """Registra o corrige notas (N1, N2, N3, sustitutorio, aplazado o nota final directa)."""
-    db.get_or_404(Matricula, nro_matricula)
+    matricula = db.get_or_404(Matricula, nro_matricula)
+    if matricula.periodo.estado != "historico":
+        raise ApiError(
+            "nota_por_acta",
+            "Las notas de este período las registra el docente en su acta y las aprueba el Director de Escuela.",
+            403,
+        )
     data = request.get_json(silent=True) or {}
     notas = calcular_notas(data)
     detail = (

@@ -11,6 +11,16 @@ class ApiError(Exception):
         self.status = status
 
 
+def entero(valor, campo, *, por_defecto=None):
+    """Convierte a entero un dato recibido; si no se puede, responde 400 en lugar de un error 500."""
+    if valor in (None, "") and por_defecto is not None:
+        return por_defecto
+    try:
+        return int(valor)
+    except (TypeError, ValueError):
+        raise ApiError("datos_invalidos", f"El campo {campo} debe ser un número entero.", 400)
+
+
 def register_error_handlers(app):
     @app.errorhandler(ApiError)
     def api_error(error):
@@ -20,6 +30,10 @@ def register_error_handlers(app):
     @app.errorhandler(404)
     def not_found(_):
         return jsonify(error="recurso_no_encontrado", detail="La ruta o recurso solicitado no existe."), 404
+
+    @app.errorhandler(413)
+    def too_large(_):
+        return jsonify(error="archivo_muy_grande", detail="El archivo supera el tamaño permitido (5 MB)."), 413
 
     @app.errorhandler(405)
     def method_not_allowed(_):

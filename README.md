@@ -7,24 +7,26 @@ API REST en Flask para el plan de estudios 2019 de Ingeniería de Sistemas (el P
 | Rol | Cómo ingresa | Puede |
 | --- | --- | --- |
 | **Alumno** | Usuario = código (o `código@unfv.edu.pe`). Contraseña inicial = código; se exige cambiarla en el primer ingreso. | Matricularse y retirar cursos en períodos abiertos, ver su malla, horario e historial (solo lectura), descargar su ficha PDF, cambiar su contraseña y datos de contacto. |
-| **Administrador** | Usuario `admin` (configurable con `ADMIN_USER`). Contraseña inicial `ADMIN_PASSWORD` (por defecto `Admin2026!`); se exige cambiarla al entrar. | Registrar alumnos, editar datos/plan/estado, restablecer contraseñas, registrar y corregir notas, **crear las cuentas del personal con sus nombres y apellidos y asignarles el rol**, crear períodos académicos. |
+| **Administrador** | Usuario `admin` (configurable con `ADMIN_USER`). Contraseña inicial `ADMIN_PASSWORD` (por defecto `Admin2026!`); se exige cambiarla al entrar. | Registrar alumnos, editar datos/plan/estado, restablecer contraseñas, **crear las cuentas del personal con sus nombres y apellidos y asignarles el rol**, crear períodos académicos y **supervisar el avance de las actas de notas**. Solo registra notas históricas (cursos llevados antes del sistema). |
 | **Jefe de Departamento** | Correo o usuario de su cuenta. | Fase 1: crea los horarios de cada curso (secciones, turno, días y horas). No asigna docentes ni aulas. |
-| **Director de Escuela** | Correo o usuario. | Fase 2: asigna el docente de cada sección (o devuelve los horarios al jefe con un motivo). Establece los horarios y abre/cierra la matrícula. |
+| **Director de Escuela** | Correo o usuario. | Fase 2: asigna el docente de cada sección (o devuelve los horarios al jefe con un motivo). Establece los horarios y abre/cierra la matrícula. **Aprueba u observa las actas de notas** de los docentes. |
 | **Asistente de Escuela** | Correo o usuario. | Fase 3: asigna pabellón, aula o laboratorio a cada sección o a cada sesión. |
-| **Docente** | Correo o usuario (contraseña inicial = usuario). | Fase 4: ve su horario, confirma cada sección o reporta un problema. |
+| **Docente** | Correo o usuario (contraseña inicial = usuario). | Fase 4: ve su horario, confirma cada sección o reporta un problema. Desde la fase 5: **registra las notas de sus salones y envía el acta firmada (PDF)** al Director. |
 
 **Cuentas del personal**: el administrador las crea con nombres y apellidos; el usuario se arma con la inicial del primer nombre y los apellidos (`Juan Carlos Alvarado Torres` → `jalvaradotorres`, correo `jalvaradotorres@unfv.pe` según `STAFF_EMAIL_DOMAIN`, contraseña inicial = usuario, con cambio obligatorio). Si el usuario ya existe se agrega un número (`jalvaradotorres2`). Todos los roles tienen recuperación de contraseña.
 
-**Cuentas de prueba** (las crea el script de la base):
+**Cuentas de prueba compartidas** (se muestran en el login). El script de la base las crea o **las repara en cada arranque** (contraseña conocida, activas y sin cambio obligatorio) y su contraseña no se puede cambiar desde el sistema, así nadie deja a los demás sin acceso. Con `CUENTAS_PRUEBA=false` se desactivan.
 
 | Rol | Usuario | Contraseña |
 | --- | --- | --- |
-| Administrador | `admin` | `Admin2026!` (o `ADMIN_PASSWORD`) |
+| Administrador | `adminprueba` | `Admin2026!` |
 | Jefe de Departamento | `jefedepartamentoescuelasistemas@unfv.edu.pe` | `Jefe2026!` |
 | Director de Escuela | `directorescuelasistemas@unfv.edu.pe` | `Director2026!` |
 | Asistente de Escuela | `asistenteescuelasistemas@unfv.edu.pe` | `Asistente2026!` |
 | Docente | `jalvaradotorres@unfv.pe` | `Docente2026!` |
 | Alumno | `20260001` | `20260001` |
+
+El administrador real (`admin`, contraseña inicial `ADMIN_PASSWORD`) no es una cuenta de prueba: debe cambiar su contraseña al primer ingreso. **El servidor exige ese cambio**: con la contraseña inicial solo se puede consultar el perfil y cambiarla. Una cuenta desactivada, o con otro rol, pierde el acceso aunque tenga un token vigente.
 
 Además se crea una cuenta por cada docente de los horarios oficiales (contraseña inicial = usuario).
 
@@ -42,7 +44,7 @@ Cada período tiene un proceso con 6 fases (más el cierre). Cada rol solo edita
 | 6. Ajustes | Todos por solicitud | Hasta `DIAS_AJUSTE_HORARIO` días (14) después del inicio de clases. |
 | 7. Cerrado | — | El director cierra el proceso y la matrícula. |
 
-Los alumnos solo ven y se matriculan en períodos en fase 5 o 6. Si un cambio aprobado modifica el horario o el aula de una sección, el docente debe volver a confirmarla. Al crear un período nuevo (panel del administrador) empieza en la fase 1.
+Los alumnos solo ven y se matriculan en períodos en fase 5 o 6 y antes de la fecha de fin del período (los períodos terminados se cierran solos). Si un cambio aprobado modifica el horario o el aula de una sección, el docente debe volver a confirmarla. Al crear un período nuevo (panel del administrador) empieza en la fase 1.
 
 Al registrar un alumno solo se envían `cod_alumno`, `nombres`, `apellidos` e `id_plan` (1 = Plan 2019). El correo `código@unfv.edu.pe` y la contraseña inicial (el código) se generan automáticamente.
 
@@ -57,13 +59,20 @@ Al registrar un alumno solo se envían `cod_alumno`, `nombres`, `apellidos` e `i
 
 Los horarios se generan desde los PDF oficiales con `scripts/fuentes/extraer_horarios.py` y quedan en `docs/horarios_2026.json`. Para cargar un horario nuevo: regenera el JSON, sube `CATALOGO_VERSION` en `scripts/seed_database_completa.py` y despliega.
 
+## Actas de notas (docente → Director de Escuela)
+
+1. Desde la fase 5 el docente ve **sus salones** y registra N1, N2, N3, sustitutorio y aplazado de cada alumno. Es un borrador: todavía no afecta el registro académico.
+2. Descarga el acta generada por el sistema, la firma y la sube escaneada en PDF (máx. 5 MB; se guarda en la base de datos porque el disco de Render es temporal).
+3. Al enviarla (todos los alumnos deben tener nota) pasa al **Director de Escuela**, que la **aprueba** (las notas se copian al registro de cada alumno) o la **observa** con un comentario (vuelve al docente). Una acta aprobada se puede **reabrir** para corregirla.
+4. El administrador ve el avance por período en «Seguimiento de notas». Las notas de cursos del sistema ya no las registra el administrador.
+
 ## Requisitos y arranque local
 
 1. Instala PostgreSQL y crea una base: `createdb matricula`.
 2. Crea y activa un entorno virtual: `python -m venv .venv`, luego `.venv\Scripts\activate` en Windows.
 3. Instala dependencias: `pip install -r requirements.txt`.
 4. Copia `.env.example` a `.env` y configura `DATABASE_URL`, `SECRET_KEY`, `JWT_SECRET_KEY` y `FRONTEND_ORIGIN`.
-5. Inicializa la base: `python scripts/seed_database_completa.py`. Es **seguro ejecutarlo siempre**: crea tablas y columnas faltantes y crea el administrador, el personal de prueba, las cuentas de los docentes, el alumno demo `20260001` y el proceso de horarios de cada período si no existen (además deja creado el período `2027-1` en la fase 1). Si cambia `CATALOGO_VERSION`, reemplaza cursos y horarios **conservando alumnos y administradores** (las matrículas y notas de prueba del catálogo anterior se eliminan). Para empezar de cero usa `--reset`.
+5. Inicializa la base: `python scripts/seed_database_completa.py`. Es **seguro ejecutarlo siempre** (Render lo ejecuta en cada arranque): crea tablas y columnas faltantes y crea el administrador, el personal de prueba, las cuentas de los docentes, el alumno demo `20260001` y el proceso de horarios de cada período si no existen (además deja creado el período `2027-1` en la fase 1). Si cambia `CATALOGO_VERSION` **no toca nada** salvo que se ejecute con `--reemplazar-catalogo` o con `REEMPLAZAR_CATALOGO=<versión>`: en ese caso reemplaza cursos y horarios conservando alumnos y personal, pero elimina las matrículas y notas del catálogo anterior. Para empezar de cero usa `--reset`.
 6. Inicia la API: `flask --app wsgi:app run --debug`.
 
 La comprobación se expone en `GET /health` (incluye el estado de la base de datos).
@@ -84,6 +93,9 @@ La comprobación se expone en `GET /health` (incluye el estado de la base de dat
 | `SESSION_HOURS` | Duración máxima del token de sesión (por defecto 2). |
 | `STAFF_EMAIL_DOMAIN` | Dominio del correo generado para el personal (por defecto `unfv.pe`). |
 | `DIAS_AJUSTE_HORARIO` | Días de ajustes de horario tras el inicio de clases (por defecto 14). |
+| `CUENTAS_PRUEBA` | `true` (por defecto) mantiene las cuentas de prueba del login; `false` las desactiva. |
+| `ZONA_HORARIA` | Zona para las fechas del proceso (por defecto `America/Lima`; el servidor trabaja en UTC). |
+| `REEMPLAZAR_CATALOGO` | Solo para cargar un catálogo nuevo: el valor debe ser igual a `CATALOGO_VERSION`. |
 | `FRONTEND_URL` | URL pública del frontend, para los enlaces de recuperación de contraseña. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` | Opcionales. Si se configuran, los enlaces de recuperación se envían por correo. |
 
@@ -114,8 +126,14 @@ Las respuestas de error tienen la forma `{"error":"...","detail":"..."}`. Los ca
 | `POST /api/alumnos` | admin | Registra alumno (`cod_alumno`, `nombres`, `apellidos`, `id_plan`). |
 | `PATCH /api/alumnos/:codigo` | admin | Edita `nombres`, `apellidos`, `id_plan`, `estado`. |
 | `POST /api/alumnos/:codigo/reset-password` | admin | La contraseña vuelve a ser el código y se exige cambiarla. |
-| `POST /api/alumnos/:codigo/calificar` | admin | `cod_curso` y `n1`, `n2`, `n3` (+ `sustitutorio`, `aplazado`) o `nota`. Califica la matrícula existente o registra la nota en el histórico. |
-| `PATCH /api/matriculas/:nro/detalle/:id_seccion/nota` | admin | Corrige las notas de una matrícula. |
+| `POST /api/alumnos/:codigo/calificar` | admin | Solo notas históricas (cursos llevados antes del sistema): `cod_curso` y `n1`, `n2`, `n3` (+ `sustitutorio`, `aplazado`) o `nota`. |
+| `PATCH /api/matriculas/:nro/detalle/:id_seccion/nota` | admin | Corrige notas del histórico. |
+| `GET /api/docente/salones?periodo=` · `GET /api/docente/salones/:id` | docente | Sus salones con el estado del acta; alumnos y notas de un salón. |
+| `PUT /api/docente/salones/:id/notas` | docente | Guarda el borrador: `{"notas": {"<código>": {"n1", "n2", "n3", "sustitutorio", "aplazado"}}}`. |
+| `POST /api/docente/salones/:id/acta` | docente | Multipart con `archivo` (PDF): envía el acta al Director. |
+| `GET /api/actas?periodo=` · `GET /api/actas/:id` | director, admin | Estado de las actas de todos los salones y detalle de una. |
+| `GET /api/actas/:id/pdf` | director, admin, docente dueño | PDF del acta firmada. |
+| `POST /api/actas/:id/revisar` | director | `accion`: `aprobar`, `observar` o `reabrir` (con `observacion`). |
 | `POST /api/auth/recuperar` · `GET/POST /api/auth/restablecer` | público | Recuperación de contraseña con enlace de un solo uso. |
 | `GET /api/admin/solicitudes-password` · `POST .../:id/atender` | admin | Atiende solicitudes (`enlace`, `restablecer`, `descartar`). |
 | `GET/POST /api/admin/usuarios` · `PATCH .../:id` · `POST .../:id/reset-password` | admin | Personal: listar, crear (`nombres`, `apellidos`, `rol`), cambiar rol o estado, restablecer contraseña. |
@@ -137,8 +155,8 @@ Las respuestas de error tienen la forma `{"error":"...","detail":"..."}`. Los ca
 1. Sube este directorio como repositorio independiente `matricula-backend` a GitHub.
 2. En Render, crea un **Blueprint** desde el repositorio y selecciona `render.yaml`, o crea manualmente una Web Service Python con build `pip install -r requirements.txt` y start `gunicorn wsgi:app --bind 0.0.0.0:$PORT`.
 3. Crea o enlaza Render Postgres y asigna su **Internal Database URL** a `DATABASE_URL`.
-4. Define secretos largos para `SECRET_KEY` y `JWT_SECRET_KEY`; define `FRONTEND_ORIGIN` con la URL de producción de Vercel. Agrega también `http://localhost:5173` separado por coma solo si lo necesitas en desarrollo.
-5. El `startCommand` ejecuta `python scripts/seed_database_completa.py` antes de gunicorn. Ya **no borra la base** en cada reinicio: solo completa lo que falte, así los alumnos y matrículas registrados se conservan. Define `ADMIN_PASSWORD` en Render si no quieres la contraseña inicial por defecto.
+4. Define secretos largos para `SECRET_KEY` y `JWT_SECRET_KEY`; define `FRONTEND_ORIGIN` con la URL de producción de Vercel (sin barra final; si lo dejas en `*` se acepta cualquier origen). Agrega también `http://localhost:5173` separado por coma solo si lo necesitas en desarrollo.
+5. El `startCommand` ejecuta `python scripts/seed_database_completa.py; gunicorn …`: el script completa lo que falte y repara las cuentas de prueba, y si fallara el API arranca igual (por eso se usa `;` y no `&&`). No borra datos. Define `ADMIN_PASSWORD` en Render si no quieres la contraseña inicial por defecto. Si el servicio se creó a mano (no como Blueprint), copia este comando en *Settings → Start Command*.
 6. Copia la URL pública final, por ejemplo `https://matricula-backend.onrender.com/api`, para usarla como `VITE_API_URL` del frontend.
 
 JWT se eligió frente a sesión de servidor porque Vercel y Render viven en orígenes distintos: el token se transmite explícitamente en `Authorization`, evita depender de cookies cross-site y mantiene la API sin estado entre réplicas.

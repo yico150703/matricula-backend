@@ -3,6 +3,7 @@ y las matricula en un solo paso. Cada ítem reserva la vacante durante CARRITO_M
 from datetime import datetime, timedelta
 
 from flask import Blueprint, current_app, jsonify, request
+from sqlalchemy import select
 from flask_jwt_extended import jwt_required
 
 from ..academico import creditos, ocupacion, purgar_carritos_vencidos, validar_secciones
@@ -78,7 +79,15 @@ def agregar(cod_alumno):
         raise ApiError("datos_invalidos", "Se requieren id_periodo y al menos una sección.", 400)
     alumno, periodo = _contexto(cod_alumno, id_periodo)
 
-    nuevas = HorarioDCSeccion.query.filter(HorarioDCSeccion.id_seccion.in_(ids)).all()
+    # Mismo orden de bloqueo que en la matrícula: alumno y luego secciones (la vacante se cuenta sin carreras)
+    db.session.execute(select(Alumno.cod_alumno).where(Alumno.cod_alumno == alumno.cod_alumno).with_for_update())
+    nuevas = (
+        db.session.execute(
+            select(HorarioDCSeccion).where(HorarioDCSeccion.id_seccion.in_(ids)).order_by(HorarioDCSeccion.id_seccion).with_for_update()
+        )
+        .scalars()
+        .all()
+    )
     if len(nuevas) != len(set(ids)):
         raise ApiError("seccion_no_encontrada", "Una o más secciones no existen.", 404)
     cursos_nuevos = {s.cod_curso for s in nuevas}
