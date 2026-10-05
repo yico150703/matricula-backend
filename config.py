@@ -18,8 +18,10 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-development-key")
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
-    # Tiempo absoluto de sesión (OWASP: depende del uso; una sesión de matrícula es corta)
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=float(os.getenv("SESSION_HOURS", "2")))
+    # Personal (admin, jefe, director, asistente, docente): sesión de una jornada, sin contador en pantalla
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=float(os.getenv("SESION_PERSONAL_HORAS", "12")))
+    # Alumnos: tiempo FIJO desde que ingresan (no se reinicia con la actividad); controla el ingreso masivo en matrícula
+    SESION_ALUMNO_MINUTOS = int(os.getenv("SESION_ALUMNO_MINUTOS", "10"))
     FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "*")
     PASSING_GRADE = float(os.getenv("PASSING_GRADE", "11"))
     MAX_CREDITS = float(os.getenv("MAX_CREDITS", "26"))

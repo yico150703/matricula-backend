@@ -84,7 +84,7 @@ def clean_dec(val, default=Decimal("3.0")):
         return default
 
 
-CATALOGO_VERSION = "2026-horario-oficial-v2"  # v2: solo secciones A, B y C
+CATALOGO_VERSION = "2026-horario-oficial-v2"
 HORARIOS_JSON = ROOT / "docs" / "horarios_2026.json"
 MALLA_XLSX = ROOT / "docs" / "malla_curricular_bd_2019.xlsx"
 PERIODOS = [
@@ -427,6 +427,25 @@ def crear_periodo_programacion(cod, inicio):
     print(f"✓ Período {cod} en programación (fase 1): clases del {ini.isoformat()} al {fin.isoformat()}.")
 
 
+def secciones_electivos():
+    """Una sola vez: los electivos tienen una única sección, la E (la v2 del catálogo los había pasado a A)."""
+    meta = db.session.get(AppMeta, "electivos_seccion_e")
+    if meta:
+        return
+    cambiados = 0
+    for s in HorarioDCSeccion.query.join(Curso, (Curso.cod_curso == HorarioDCSeccion.cod_curso) & (Curso.corr_pe == 1)).filter(
+        Curso.mencion_electiva.isnot(None), HorarioDCSeccion.cod_seccion != "E"
+    ).all():
+        hermanas = HorarioDCSeccion.query.filter_by(id_horario=s.id_horario, cod_curso=s.cod_curso).count()
+        if hermanas == 1:
+            s.cod_seccion = "E"
+            cambiados += 1
+    db.session.add(AppMeta(clave="electivos_seccion_e", valor="hecho"))
+    db.session.commit()
+    if cambiados:
+        print(f"✓ {cambiados} secciones de electivos pasan a la sección E.")
+
+
 def version_catalogo():
     meta = db.session.get(AppMeta, "catalogo")
     return meta.valor if meta else None
@@ -480,6 +499,7 @@ def main(argv=None):
         ensure_docentes()
         ensure_procesos()
         limpiar_periodo_automatico()
+        secciones_electivos()
         if reiniciado:
             crear_periodo_programacion(*PERIODO_PROGRAMACION)
         print("✓ Base de datos lista.")
@@ -597,7 +617,7 @@ def seed_catalog():
         next_seccion += 1
         total += 1
     db.session.commit()
-    print(f"✓ {total} secciones oficiales (A/B/C) con turnos, docentes y aulas.")
+    print(f"✓ {total} secciones oficiales (A/B/C y E para electivos) con turnos, docentes y aulas.")
 
 
 if __name__ == "__main__":

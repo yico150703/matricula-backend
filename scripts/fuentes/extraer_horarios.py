@@ -88,8 +88,7 @@ def main(fuentes):
                 "periodo": periodo,
                 "id_curso_malla": int(curso["id_curso"]),
                 "ciclo": ROMANOS.get(ciclo, int(curso["id_semestre"])),
-                # La escuela solo usa secciones A, B y C (los electivos del PDF vienen como "E": se dictan como A)
-                "seccion": sec if sec in ("A", "B", "C") else "A",
+                "seccion": sec,  # A, B, C (cursos regulares) o E (electivos: una sola sección)
                 "turno": turno,
                 "cupo": int(cupo or 30),
                 "docente": docente(doc),

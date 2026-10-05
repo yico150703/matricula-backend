@@ -17,7 +17,7 @@ bp = Blueprint("carrito", __name__)
 
 
 def _contexto(cod_alumno, id_periodo):
-    require_self_or_admin(cod_alumno, "Solo puede operar sobre su propio carrito.")
+    require_self_or_admin(cod_alumno, "Solo puede operar sobre su propia selección de cursos.")
     alumno = db.get_or_404(Alumno, cod_alumno)
     periodo = db.get_or_404(PeriodoAcademico, id_periodo)
     purgar_carritos_vencidos()
@@ -115,7 +115,7 @@ def agregar(cod_alumno):
     for s in nuevas:
         db.session.add(CarritoItem(cod_alumno=alumno.cod_alumno, id_periodo=periodo.unique_id, id_seccion=s.id_seccion, creado_en=ahora, expira_en=expira))
     db.session.commit()
-    return _respuesta(alumno, periodo, {"mensaje": f"{len(nuevas)} curso(s) agregado(s) al carrito."})
+    return _respuesta(alumno, periodo, {"mensaje": f"{len(nuevas)} curso(s) agregado(s) a tu selección." if len(nuevas) != 1 else "Curso agregado a tu selección."})
 
 
 @bp.delete("/carrito/<cod_alumno>/<int:id_seccion>")
@@ -146,6 +146,6 @@ def confirmar(cod_alumno):
     items = _items(alumno, periodo)
     if not items:
         db.session.commit()
-        raise ApiError("carrito_vacio", "Tu carrito está vacío o la reserva expiró. Vuelve a agregar los cursos.", 409)
+        raise ApiError("carrito_vacio", "No tienes cursos seleccionados o la reserva expiró. Vuelve a seleccionar los cursos.", 409)
     matricula = matricular(alumno, periodo, [i.id_seccion for i in items])
     return jsonify(matricula=serialize_enrollment(matricula), mensaje="Matrícula registrada."), 201

@@ -1,5 +1,8 @@
 """Utilidades de autenticación y autorización por rol (alumno / admin)."""
+from datetime import timedelta
 from functools import wraps
+
+from flask import current_app
 
 from flask_jwt_extended import create_access_token, get_jwt, get_jwt_identity, verify_jwt_in_request
 
@@ -15,7 +18,8 @@ def institutional_email(cod_alumno):
 
 
 def token_for_alumno(alumno):
-    return create_access_token(identity=alumno.cod_alumno, additional_claims={"rol": "alumno"})
+    minutos = current_app.config["SESION_ALUMNO_MINUTOS"]
+    return create_access_token(identity=alumno.cod_alumno, additional_claims={"rol": "alumno"}, expires_delta=timedelta(minutes=minutos))
 
 
 def token_for_admin(admin):

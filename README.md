@@ -1,6 +1,6 @@
 # Matrícula UNFV — Backend
 
-API REST en Flask para el plan de estudios 2019 de Ingeniería de Sistemas (el Plan 2010 fue retirado), con los horarios oficiales 2026-1 y 2026-2: secciones A, B y C (los electivos se dictan como sección A), turnos M/T/N, docentes, aulas (Pabellón B · Aula 505, Laboratorio de Cómputo 1…) y códigos oficiales de asignatura. Usa PostgreSQL, Alembic mediante Flask-Migrate, JWT y CORS restringido.
+API REST en Flask para el plan de estudios 2019 de Ingeniería de Sistemas (el Plan 2010 fue retirado), con los horarios oficiales 2026-1 y 2026-2: secciones A, B y C (los electivos tienen una sola sección: E), turnos M/T/N, docentes, aulas (Pabellón B · Aula 505, Laboratorio de Cómputo 1…) y códigos oficiales de asignatura. Usa PostgreSQL, Alembic mediante Flask-Migrate, JWT y CORS restringido.
 
 ## Roles y accesos
 
@@ -48,6 +48,12 @@ Las pantallas del personal muestran siempre el período en proceso (se elige sol
 
 **Calendario**: el período AAAA-1 empieza un **lunes de marzo, abril o mayo**; el fin se calcula solo (16 semanas de clases, termina el sábado de la semana 16). Sigue 1 semana de vacaciones y el AAAA-2 empieza el lunes siguiente (se calcula solo a partir del AAAA-1). Un período en programación sin matrículas se puede eliminar desde el panel.
 
+**Turnos**: mañana de 08:00 a 14:40, tarde de 13:00 a 18:00 y noche de 17:10 a 22:10; ninguna clase puede salirse de su turno.
+
+**Docente por asignar**: el director puede enviar la programación aunque falten docentes (no siempre alcanzan al programar). Desde la fase 3 hasta la 6 completa esas secciones directamente; no se puede cerrar el proceso mientras quede alguna sin docente.
+
+**Pendiente (a futuro)**: la capacidad de cada sección debería calcularse con los alumnos aptos para el curso (los que lo desaprobaron el ciclo anterior más los que pasan a ese ciclo) para fijar un límite por salón.
+
 **Horarios**: las clases van en bloques de 50 minutos desde las 08:00 (08:00, 08:50, 09:40, …, 22:10). Cada sección debe dictar al menos las horas semanales del plan de estudios oficial (HT + HP; el plan indica un total de (HT+HP) × 16 por semestre). Los horarios oficiales 2026 cumplen ese mínimo y algunas secciones tienen 1 a 3 horas extra de práctica, por eso se exige el mínimo y no un valor exacto.
 
 Al registrar un alumno solo se envían `cod_alumno`, `nombres`, `apellidos` e `id_plan` (1 = Plan 2019). El correo `código@unfv.edu.pe` y la contraseña inicial (el código) se generan automáticamente.
@@ -56,9 +62,9 @@ Al registrar un alumno solo se envían `cod_alumno`, `nombres`, `apellidos` e `i
 
 - **Horarios**: cada sección tiene varias sesiones semanales (`seccion_sesion`). Llevar todos los cursos de un ciclo en la misma sección no genera cruces; los cruces se validan sesión por sesión.
 - **Vacantes**: se muestra capacidad, matriculados y reservas activas. A los alumnos que repiten el curso se les permite un sobrecupo (hasta `SOBRECUPO_REPITENTES` por sección, según cuántos repitentes aptos haya).
-- **Carrito**: el alumno reúne secciones de su ciclo y de otros ciclos (cursos que repite o que aún no llevó) y las matricula en un paso. Cada ítem reserva la vacante `CARRITO_MINUTOS` (10 por defecto). Se valida plan, prerrequisitos, cruces, duplicados, vacantes y el máximo de `MAX_CREDITS` créditos.
+- **Selección de cursos**: el alumno reúne secciones de su ciclo y de otros ciclos (cursos que repite o que aún no llevó) y las matricula en un paso. Cada ítem reserva la vacante `CARRITO_MINUTOS` (10 por defecto). Se valida plan, prerrequisitos, cruces, duplicados, vacantes y el máximo de `MAX_CREDITS` créditos.
 - **Notas**: N1, N2, N3 → promedio redondeado (desde x.5 sube: 10.5 = 11; 10.4 = 10). El sustitutorio reemplaza a la nota más baja si es mayor y el aplazado, si existe, es la nota final. También se acepta una nota final directa. Las notas de cursos llevados antes del sistema se guardan en el período `HISTORICO` (no ocupan créditos del semestre actual).
-- **Sesión**: cierre por inactividad a los 10 minutos en el frontend (OWASP recomienda 2-5 min para aplicaciones de alto riesgo y 15-30 para bajo riesgo) y tiempo absoluto del token de `SESSION_HOURS` (2 h).
+- **Sesión**: los **alumnos** tienen un tiempo fijo de sesión desde que ingresan (`SESION_ALUMNO_MINUTOS`, 10 min; no se reinicia con la actividad ni al recargar). El personal no tiene contador: su sesión dura una jornada (`SESION_PERSONAL_HORAS`, 12 h).
 - **Recuperación de contraseña**: `POST /api/auth/recuperar` genera un enlace de un solo uso (vence en 30 min). Si hay SMTP configurado se envía al correo del alumno; si no, la solicitud aparece en el panel del administrador, que puede generar el enlace o restablecer la contraseña al código.
 
 **Reinicio de pruebas**: `REINICIO_PRUEBAS` en `scripts/seed_database_completa.py` se aplica una sola vez al desplegar. El actual (`2026-10-05`) deja 2026-1 cerrado, **2026-2 en matrícula de alumnos (fase 5)** y **2027-1 en fase 1** sin secciones; borra matrículas, notas, actas, carritos y solicitudes y conserva alumnos y cuentas del personal. Para repetirlo, cambia el valor y vuelve a desplegar.

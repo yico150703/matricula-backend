@@ -50,7 +50,8 @@ RESPONSABLE = {"horario": "jefe", "docente": "director", "aula": "asistente"}
 CONTRAPARTE = {"jefe": "director", "director": "jefe", "asistente": "director"}
 TIPO_POR_ROL = {"jefe": "horario", "director": "docente", "asistente": "aula"}
 FASE_EDICION = {"jefe": 1, "director": 2, "asistente": 3}
-SECCIONES = ("A", "B", "C")  # la escuela programa como máximo tres secciones por curso
+SECCIONES = ("A", "B", "C")  # cursos regulares: hasta tres secciones
+SECCION_ELECTIVO = "E"  # los electivos tienen una sola sección (un solo horario)
 HORA_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 # Hora académica UNFV: 50 minutos. Las clases se programan en bloques desde las 08:00 hasta las 22:10.
 MINUTOS_HORA_ACADEMICA = 50
@@ -253,6 +254,22 @@ def validar_sesiones(sesiones):
     return limpias
 
 
+# Franja de cada turno (bloques de 50 min): ninguna clase puede salirse de su turno
+RANGO_TURNO = {"M": ("08:00", "14:40"), "T": ("13:00", "18:00"), "N": ("17:10", "22:10")}
+NOMBRE_TURNO = {"M": "mañana", "T": "tarde", "N": "noche"}
+
+
+def verificar_turno(turno, limpias):
+    ini, fin = RANGO_TURNO.get(turno, ("08:00", BLOQUES[-1]))
+    for _d, i, f in limpias:
+        if i < ini or f > fin:
+            raise ApiError(
+                "fuera_de_turno",
+                f"El turno {NOMBRE_TURNO.get(turno, turno)} va de {ini} a {fin}: la clase de {i} a {f} se sale de ese horario.",
+                400,
+            )
+
+
 def _hora(t):
     h, m = t.split(":")
     return time(int(h), int(m))
@@ -284,19 +301,27 @@ def verificar_docente(s, id_docente, todas):
 
 
 def verificar_aula(s, aula, todas, bloques=None):
-    """Comprueba sesión por sesión que el aula no esté ocupada por otra sección a la misma hora."""
+    """Comprueba sesión por sesión que el aula no esté ocupada por otra sección a la misma hora.
+    Si hay cruces, el error enumera TODAS las secciones con las que choca (día, hora y curso)."""
     if aula == SIN_ASIGNAR:
         return
     mias = bloques if bloques is not None else s.bloques()
+    choques = []
     for o in todas:
         if o.id_seccion == s.id_seccion:
             continue
         for ob in o.bloques():
             if (ob.aula or o.aula or "").upper() != aula.upper():
                 continue
-            if any(b.dia == ob.dia and b.hora_inicio < ob.hora_fin and ob.hora_inicio < b.hora_fin for b in mias):
-                nombre = o.curso.den_curso if o.curso else o.cod_curso
-                raise ApiError("cruce_aula", f"{aula} ya está ocupada por {nombre} ({o.cod_seccion}) en ese horario.", 409)
+            for b in mias:
+                if b.dia == ob.dia and b.hora_inicio < ob.hora_fin and ob.hora_inicio < b.hora_fin:
+                    nombre = o.curso.den_curso if o.curso else o.cod_curso
+                    choques.append(
+                        f"{DIAS.get(ob.dia, '')} {ob.hora_inicio.strftime('%H:%M')}-{ob.hora_fin.strftime('%H:%M')}: {nombre} ({o.cod_seccion})"
+                    )
+    if choques:
+        lista = "; ".join(dict.fromkeys(choques))
+        raise ApiError("cruce_aula", f"{ubicacion_aula(aula)['texto']} ya está ocupada a esa hora por {lista}. Elige otra aula.", 409)
 
 
 def aplicar_sesiones(s, limpias):
@@ -419,7 +444,10 @@ def crear_seccion(id_periodo):
     if not curso:
         raise ApiError("curso_no_encontrado", "El curso no existe en el plan.", 404)
     letra = str(data.get("cod_seccion") or "").strip().upper()
-    if letra not in SECCIONES:
+    if curso.mencion_electiva:
+        if letra != SECCION_ELECTIVO:
+            raise ApiError("datos_invalidos", "Los electivos tienen una sola sección: E.", 400)
+    elif letra not in SECCIONES:
         raise ApiError("datos_invalidos", "La sección debe ser A, B o C.", 400)
     turno = str(data.get("turno") or "").upper()
     if turno not in ("M", "T", "N"):
@@ -429,6 +457,7 @@ def crear_seccion(id_periodo):
         raise ApiError("datos_invalidos", "La capacidad debe estar entre 5 y 80.", 400)
     limpias = validar_sesiones(data.get("sesiones"))
     verificar_horas_plan(curso, limpias)
+    verificar_turno(turno, limpias)
 
     cab = cabecera(periodo)
     hc = db.session.get(HorarioDCurso, (cab.id_horario, curso.semestre, curso.cod_curso))
@@ -469,7 +498,10 @@ def editar_seccion(id_seccion):
     if "sesiones" in data:
         limpias = validar_sesiones(data["sesiones"])
         verificar_horas_plan(s.curso, limpias)
+        verificar_turno(s.turno, limpias)
         aplicar_sesiones(s, limpias)
+    elif "turno" in data:
+        verificar_turno(s.turno, [(b.dia, b.hora_inicio.strftime("%H:%M"), b.hora_fin.strftime("%H:%M")) for b in s.bloques()])
     registrar(proceso, user, f"Editó la sección {s.cod_seccion} de {s.curso.den_curso if s.curso else s.cod_curso}")
     db.session.commit()
     return jsonify(seccion={**seccion_dict(s), "avisos": cruces_de_seccion(s, secciones_periodo(periodo))})
@@ -539,7 +571,11 @@ def copiar_base(id_periodo):
 def asignar_docente(id_seccion):
     user = yo()
     s, periodo, proceso = seccion_del_periodo(id_seccion)
-    exigir_fase_edicion(proceso, "director")
+    # Fase 2: asigna libremente. Fases 3 a 6: solo completa las secciones que quedaron con "Docente por asignar"
+    # (la universidad puede no tener docentes suficientes al programar; deben quedar todos antes del cierre).
+    pendiente_de_docente = s.id_docente is None and (s.docente or SIN_ASIGNAR) == SIN_ASIGNAR
+    if not (proceso.fase == 2 or (3 <= proceso.fase <= 6 and pendiente_de_docente)):
+        exigir_fase_edicion(proceso, "director")
     id_docente = (request.get_json(silent=True) or {}).get("id_docente")
     docente = None
     if id_docente:
@@ -548,6 +584,9 @@ def asignar_docente(id_seccion):
             raise ApiError("docente_no_encontrado", "El docente no existe o está inactivo.", 404)
         verificar_docente(s, docente.id_admin, secciones_periodo(periodo))
     aplicar_docente(s, docente)
+    if proceso.fase >= 3:
+        # En la fase 4 el docente aún debe confirmar; desde la 5 los horarios ya están establecidos
+        s.estado_docente = "pendiente" if proceso.fase == 4 and docente else "confirmado"
     registrar(proceso, user, f"Asignó {s.docente} a {s.curso.den_curso if s.curso else s.cod_curso} ({s.cod_seccion})")
     db.session.commit()
     return jsonify(seccion=seccion_dict(s))
@@ -610,9 +649,7 @@ def accion(id_periodo):
         cambiar_fase(proceso, 1, user, f"Devolvió los horarios al jefe: {motivo[:200]}")
     elif acc == "enviar_confirmacion":
         exigir("director", (2,))
-        faltan = [s for s in secciones if s.id_docente is None and s.docente == SIN_ASIGNAR]
-        if faltan:
-            raise ApiError("faltan_docentes", f"Faltan asignar docentes en {len(faltan)} secciones.", 409)
+        # Se puede continuar con secciones en "Docente por asignar": se completan hasta el cierre (fase 6)
         proceso.confirmado_jefe = proceso.confirmado_director = False
         cambiar_fase(proceso, 3, user, "Envió la asignación de docentes a confirmación")
     elif acc == "confirmar":
@@ -648,6 +685,9 @@ def accion(id_periodo):
         cambiar_fase(proceso, 6, user, "Inició el período de ajustes de horario")
     elif acc == "cerrar":
         exigir("director", (5, 6))
+        faltan = [s for s in secciones if s.id_docente is None and (s.docente or SIN_ASIGNAR) == SIN_ASIGNAR]
+        if faltan:
+            raise ApiError("faltan_docentes", f"Antes de cerrar asigna docente a las {len(faltan)} secciones que siguen con «Docente por asignar».", 409)
         # Las solicitudes que quedaron abiertas ya no se pueden aplicar
         SolicitudCambio.query.filter_by(id_periodo=periodo.unique_id, estado="pendiente").update(
             {"estado": "rechazada", "respuesta": "Se cerró el proceso de horarios.", "resuelto_en": datetime.utcnow()}, synchronize_session=False
@@ -700,6 +740,7 @@ def validar_propuesta(tipo, propuesta, s, periodo):
     if tipo == "horario":
         limpias = validar_sesiones(propuesta.get("sesiones"))
         verificar_horas_plan(s.curso, limpias)
+        verificar_turno(s.turno, limpias)
         return {"sesiones": [{"dia": d, "hora_inicio": i, "hora_fin": f} for d, i, f in limpias]}
     if tipo == "docente":
         d = Administrador.query.filter_by(id_admin=entero(propuesta.get("id_docente"), "id_docente", por_defecto=0), rol="docente", activo=True).first()
@@ -724,12 +765,14 @@ def propuesta_sin_cambios(tipo, propuesta, s):
 
 
 @bp.get("/proceso/<int:id_periodo>/solicitudes")
-@roles_required(*PERSONAL)
+@roles_required(*PERSONAL, "admin")
 def listar_solicitudes(id_periodo):
     user = yo()
     periodo = periodo_o_404(id_periodo)
     q = SolicitudCambio.query.filter_by(id_periodo=periodo.unique_id)
-    if user.rol == "docente":
+    if user.rol == "admin":
+        pass  # el administrador supervisa todas las solicitudes (solo lectura)
+    elif user.rol == "docente":
         q = q.filter(SolicitudCambio.id_autor == user.id_admin)
     else:
         q = q.filter((SolicitudCambio.rol_destino == user.rol) | (SolicitudCambio.id_autor == user.id_admin) | (SolicitudCambio.rol_autor == user.rol))

@@ -24,8 +24,10 @@ services:
         value: "5"
       - key: CARRITO_MINUTOS
         value: "10"
-      - key: SESSION_HOURS
-        value: "2"
+      - key: SESION_PERSONAL_HORAS
+        value: "12"
+      - key: SESION_ALUMNO_MINUTOS
+        value: "10"
       - key: DIAS_AJUSTE_HORARIO
         value: "14"
       - key: CUENTAS_PRUEBA
