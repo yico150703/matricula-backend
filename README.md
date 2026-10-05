@@ -1,6 +1,6 @@
 # Matrícula UNFV — Backend
 
-API REST en Flask para el plan de estudios 2019 de Ingeniería de Sistemas (el Plan 2010 fue retirado), con los horarios oficiales 2026-1 y 2026-2: secciones A, B, C (y E para electivos), turnos M/T/N, docentes, aulas (Pabellón B · Aula 505, Laboratorio de Cómputo 1…) y códigos oficiales de asignatura. Usa PostgreSQL, Alembic mediante Flask-Migrate, JWT y CORS restringido.
+API REST en Flask para el plan de estudios 2019 de Ingeniería de Sistemas (el Plan 2010 fue retirado), con los horarios oficiales 2026-1 y 2026-2: secciones A, B y C (los electivos se dictan como sección A), turnos M/T/N, docentes, aulas (Pabellón B · Aula 505, Laboratorio de Cómputo 1…) y códigos oficiales de asignatura. Usa PostgreSQL, Alembic mediante Flask-Migrate, JWT y CORS restringido.
 
 ## Roles y accesos
 
@@ -60,6 +60,8 @@ Al registrar un alumno solo se envían `cod_alumno`, `nombres`, `apellidos` e `i
 - **Notas**: N1, N2, N3 → promedio redondeado (desde x.5 sube: 10.5 = 11; 10.4 = 10). El sustitutorio reemplaza a la nota más baja si es mayor y el aplazado, si existe, es la nota final. También se acepta una nota final directa. Las notas de cursos llevados antes del sistema se guardan en el período `HISTORICO` (no ocupan créditos del semestre actual).
 - **Sesión**: cierre por inactividad a los 10 minutos en el frontend (OWASP recomienda 2-5 min para aplicaciones de alto riesgo y 15-30 para bajo riesgo) y tiempo absoluto del token de `SESSION_HOURS` (2 h).
 - **Recuperación de contraseña**: `POST /api/auth/recuperar` genera un enlace de un solo uso (vence en 30 min). Si hay SMTP configurado se envía al correo del alumno; si no, la solicitud aparece en el panel del administrador, que puede generar el enlace o restablecer la contraseña al código.
+
+**Reinicio de pruebas**: `REINICIO_PRUEBAS` en `scripts/seed_database_completa.py` se aplica una sola vez al desplegar. El actual (`2026-10-05`) deja 2026-1 cerrado, **2026-2 en matrícula de alumnos (fase 5)** y **2027-1 en fase 1** sin secciones; borra matrículas, notas, actas, carritos y solicitudes y conserva alumnos y cuentas del personal. Para repetirlo, cambia el valor y vuelve a desplegar.
 
 Los horarios se generan desde los PDF oficiales con `scripts/fuentes/extraer_horarios.py` y quedan en `docs/horarios_2026.json`. Para cargar un horario nuevo: regenera el JSON, sube `CATALOGO_VERSION` en `scripts/seed_database_completa.py` y despliega.
 

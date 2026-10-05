@@ -32,6 +32,7 @@ if hasattr(sys.stderr, "reconfigure"):
 from app import create_app
 from app.extensions import db
 from app.models import (
+    ActaNotas,
     ProcesoHorario,
     SolicitudCambio,
     SolicitudMensaje,
@@ -83,7 +84,7 @@ def clean_dec(val, default=Decimal("3.0")):
         return default
 
 
-CATALOGO_VERSION = "2026-horario-oficial-v1"
+CATALOGO_VERSION = "2026-horario-oficial-v2"  # v2: solo secciones A, B y C
 HORARIOS_JSON = ROOT / "docs" / "horarios_2026.json"
 MALLA_XLSX = ROOT / "docs" / "malla_curricular_bd_2019.xlsx"
 PERIODOS = [
@@ -365,6 +366,67 @@ def limpiar_periodo_automatico():
     db.session.commit()
 
 
+# Reinicio de pruebas: se ejecuta UNA sola vez por cada valor de REINICIO_PRUEBAS. Deja la base así:
+#   2026-1  cerrado (fase 7)
+#   2026-2  matrícula de alumnos abierta (fase 5) con los horarios oficiales
+#   2027-1  en programación (fase 1): el Jefe de Departamento arma los horarios desde cero
+# Borra matrículas, notas, actas, carritos y solicitudes de cambio; conserva alumnos y cuentas del personal.
+# Para repetirlo más adelante basta con cambiar REINICIO_PRUEBAS y volver a desplegar.
+REINICIO_PRUEBAS = "2026-10-05"
+PERIODO_PROGRAMACION = ("2027-1", date(2027, 3, 15))
+
+
+def reinicio_pruebas():
+    meta = db.session.get(AppMeta, "reinicio_pruebas")
+    if meta and meta.valor == REINICIO_PRUEBAS:
+        return False
+    print(f"! Reinicio de pruebas {REINICIO_PRUEBAS}: 2026-2 en matrícula (fase 5) y 2027-1 en fase 1.")
+    for modelo in (ActaNotas, SolicitudMensaje, SolicitudCambio, CarritoItem, MatriculaDetalle, Matricula, ProcesoHorario):
+        db.session.query(modelo).delete(synchronize_session=False)
+    db.session.commit()
+    if db.session.query(Curso).first() is not None:
+        limpiar_catalogo_anterior()
+    # Solo quedan los períodos oficiales 2026 (y el histórico de notas anteriores)
+    oficiales = {cod for _uid, cod, _ini, _fin in PERIODOS}
+    for p in PeriodoAcademico.query.all():
+        if p.estado != "historico" and p.cod_per_acad not in oficiales:
+            db.session.delete(p)
+    hoy_ = date.today()
+    for _uid, cod, ini, fin in PERIODOS:
+        p = PeriodoAcademico.query.filter_by(cod_per_acad=cod).first()
+        if p:
+            p.fec_inicio, p.fec_fin = ini, fin
+            p.estado = "en_curso" if hoy_ <= fin else "cerrado"
+    db.session.commit()
+    seed_catalog()
+    for meta_clave, valor in (("catalogo", CATALOGO_VERSION), ("reinicio_pruebas", REINICIO_PRUEBAS), ("limpieza_2027_1", "hecho")):
+        fila = db.session.get(AppMeta, meta_clave)
+        if fila:
+            fila.valor = valor
+        else:
+            db.session.add(AppMeta(clave=meta_clave, valor=valor))
+    db.session.commit()
+    return True
+
+
+def crear_periodo_programacion(cod, inicio):
+    """Crea un período en programación (fase 1), sin secciones, igual que desde el panel del administrador."""
+    from app.blueprints.proceso import cabecera
+    from app.calendario import fechas_para
+
+    if PeriodoAcademico.query.filter_by(cod_per_acad=cod).first():
+        return
+    ini, fin = fechas_para(cod, inicio, None)
+    nuevo = (db.session.query(db.func.max(PeriodoAcademico.unique_id)).scalar() or 0) + 1
+    periodo = PeriodoAcademico(unique_id=nuevo, cod_per_acad=cod, fec_inicio=ini, fec_fin=fin, estado="programacion")
+    db.session.add(periodo)
+    db.session.flush()
+    cabecera(periodo)
+    db.session.add(ProcesoHorario(id_periodo=nuevo, fase=1, historial="[]"))
+    db.session.commit()
+    print(f"✓ Período {cod} en programación (fase 1): clases del {ini.isoformat()} al {fin.isoformat()}.")
+
+
 def version_catalogo():
     meta = db.session.get(AppMeta, "catalogo")
     return meta.valor if meta else None
@@ -392,6 +454,7 @@ def main(argv=None):
         if args.reset:
             reset_database()
         ensure_schema()
+        reiniciado = reinicio_pruebas()
         actual = version_catalogo()
         hay_datos = db.session.query(Curso).first() is not None
         permitir = args.reemplazar_catalogo or os.getenv("REEMPLAZAR_CATALOGO", "").strip() == CATALOGO_VERSION
@@ -417,6 +480,8 @@ def main(argv=None):
         ensure_docentes()
         ensure_procesos()
         limpiar_periodo_automatico()
+        if reiniciado:
+            crear_periodo_programacion(*PERIODO_PROGRAMACION)
         print("✓ Base de datos lista.")
 
 
@@ -532,7 +597,7 @@ def seed_catalog():
         next_seccion += 1
         total += 1
     db.session.commit()
-    print(f"✓ {total} secciones oficiales (A/B/C/E) con turnos, docentes y aulas.")
+    print(f"✓ {total} secciones oficiales (A/B/C) con turnos, docentes y aulas.")
 
 
 if __name__ == "__main__":

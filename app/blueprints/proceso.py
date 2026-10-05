@@ -50,6 +50,7 @@ RESPONSABLE = {"horario": "jefe", "docente": "director", "aula": "asistente"}
 CONTRAPARTE = {"jefe": "director", "director": "jefe", "asistente": "director"}
 TIPO_POR_ROL = {"jefe": "horario", "director": "docente", "asistente": "aula"}
 FASE_EDICION = {"jefe": 1, "director": 2, "asistente": 3}
+SECCIONES = ("A", "B", "C")  # la escuela programa como máximo tres secciones por curso
 HORA_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 # Hora académica UNFV: 50 minutos. Las clases se programan en bloques desde las 08:00 hasta las 22:10.
 MINUTOS_HORA_ACADEMICA = 50
@@ -265,7 +266,10 @@ def cruces_de_seccion(s, todas):
     """Advertencias del jefe: la misma sección (letra) de un ciclo no debe cruzarse entre cursos."""
     avisos = []
     for o in todas:
-        if o.id_seccion == s.id_seccion or o.cod_curso == s.cod_curso or o.cod_seccion == "E":
+        if o.id_seccion == s.id_seccion or o.cod_curso == s.cod_curso:
+            continue
+        # Los electivos se eligen uno por alumno: pueden coincidir con otros cursos del ciclo
+        if (o.curso and o.curso.mencion_electiva) or (s.curso and s.curso.mencion_electiva):
             continue
         if o.semestre_corr == s.semestre_corr and o.cod_seccion == s.cod_seccion and _solapan(s, o):
             avisos.append(f"Se cruza con {o.curso.den_curso if o.curso else o.cod_curso} ({o.cod_seccion})")
@@ -415,8 +419,8 @@ def crear_seccion(id_periodo):
     if not curso:
         raise ApiError("curso_no_encontrado", "El curso no existe en el plan.", 404)
     letra = str(data.get("cod_seccion") or "").strip().upper()
-    if letra not in ("A", "B", "C", "D", "E"):
-        raise ApiError("datos_invalidos", "La sección debe ser A, B, C, D o E (electivos).", 400)
+    if letra not in SECCIONES:
+        raise ApiError("datos_invalidos", "La sección debe ser A, B o C.", 400)
     turno = str(data.get("turno") or "").upper()
     if turno not in ("M", "T", "N"):
         raise ApiError("datos_invalidos", "El turno debe ser M, T o N.", 400)
