@@ -409,6 +409,55 @@ def reinicio_pruebas():
     return True
 
 
+NOTA_PRIMER_CICLO = Decimal("14")
+
+
+def aprobar_primer_ciclo():
+    """Una vez por reinicio de pruebas: todos los alumnos registrados quedan con el ciclo I aprobado.
+    Las notas se guardan como registro histórico (período HISTORICO), igual que las que registra el administrador,
+    así no ocupan créditos ni vacantes del semestre actual. No toca cursos que el alumno ya tenga aprobados."""
+    from app.blueprints.alumnos import _seccion_historica
+
+    meta = db.session.get(AppMeta, "primer_ciclo_aprobado")
+    if meta and meta.valor == REINICIO_PRUEBAS:
+        return
+    minima = Decimal(os.getenv("PASSING_GRADE", "11"))
+    alumnos = Alumno.query.all()
+    registrados = 0
+    for alumno in alumnos:
+        cursos = Curso.query.filter_by(cod_fac=alumno.cod_fac, cod_esc=alumno.cod_esc, corr_pe=alumno.corr_pe, semestre=1).filter(
+            Curso.mencion_electiva.is_(None)
+        ).all()
+        aprobados = {
+            cod for (cod,) in db.session.query(HorarioDCSeccion.cod_curso)
+            .join(MatriculaDetalle, MatriculaDetalle.id_seccion == HorarioDCSeccion.id_seccion)
+            .join(Matricula, Matricula.nro_matricula == MatriculaDetalle.nro_matricula)
+            .filter(Matricula.cod_alumno == alumno.cod_alumno, MatriculaDetalle.nota_final >= minima)
+            .all()
+        }
+        for curso in cursos:
+            if curso.cod_curso in aprobados:
+                continue
+            periodo, seccion = _seccion_historica(alumno, curso)
+            matricula = Matricula.query.filter_by(cod_alumno=alumno.cod_alumno, id_periodo=periodo.unique_id).first()
+            if not matricula:
+                matricula = Matricula(cod_alumno=alumno.cod_alumno, id_periodo=periodo.unique_id, estado="confirmada", monto_pagado=0)
+                db.session.add(matricula)
+                db.session.flush()
+            detalle = MatriculaDetalle.query.filter_by(nro_matricula=matricula.nro_matricula, id_seccion=seccion.id_seccion).first()
+            if not detalle:
+                detalle = MatriculaDetalle(nro_matricula=matricula.nro_matricula, id_seccion=seccion.id_seccion, estado="matriculado")
+                db.session.add(detalle)
+            detalle.nota_final = NOTA_PRIMER_CICLO
+            registrados += 1
+    if meta:
+        meta.valor = REINICIO_PRUEBAS
+    else:
+        db.session.add(AppMeta(clave="primer_ciclo_aprobado", valor=REINICIO_PRUEBAS))
+    db.session.commit()
+    print(f"✓ Ciclo I aprobado para {len(alumnos)} alumnos ({registrados} notas históricas de {NOTA_PRIMER_CICLO}).")
+
+
 def crear_periodo_programacion(cod, inicio):
     """Crea un período en programación (fase 1), sin secciones, igual que desde el panel del administrador."""
     from app.blueprints.proceso import cabecera
@@ -500,6 +549,7 @@ def main(argv=None):
         ensure_procesos()
         limpiar_periodo_automatico()
         secciones_electivos()
+        aprobar_primer_ciclo()
         if reiniciado:
             crear_periodo_programacion(*PERIODO_PROGRAMACION)
         print("✓ Base de datos lista.")
