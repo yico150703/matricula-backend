@@ -372,7 +372,7 @@ def limpiar_periodo_automatico():
 #   2027-1  en programación (fase 1): el Jefe de Departamento arma los horarios desde cero
 # Borra matrículas, notas, actas, carritos y solicitudes de cambio; conserva alumnos y cuentas del personal.
 # Para repetirlo más adelante basta con cambiar REINICIO_PRUEBAS y volver a desplegar.
-REINICIO_PRUEBAS = "2026-10-05"
+REINICIO_PRUEBAS = "2026-10-07"
 PERIODO_PROGRAMACION = ("2027-1", date(2027, 3, 15))
 
 

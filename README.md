@@ -67,7 +67,7 @@ Al registrar un alumno solo se envían `cod_alumno`, `nombres`, `apellidos` e `i
 - **Sesión**: los **alumnos** tienen un tiempo fijo de sesión desde que ingresan (`SESION_ALUMNO_MINUTOS`, 10 min; no se reinicia con la actividad ni al recargar). El personal no tiene contador: su sesión dura una jornada (`SESION_PERSONAL_HORAS`, 12 h).
 - **Recuperación de contraseña**: `POST /api/auth/recuperar` genera un enlace de un solo uso (vence en 30 min). Si hay SMTP configurado se envía al correo del alumno; si no, la solicitud aparece en el panel del administrador, que puede generar el enlace o restablecer la contraseña al código.
 
-**Reinicio de pruebas**: `REINICIO_PRUEBAS` en `scripts/seed_database_completa.py` se aplica una sola vez al desplegar. El actual (`2026-10-05`) deja 2026-1 cerrado, **2026-2 en matrícula de alumnos (fase 5)** y **2027-1 en fase 1** sin secciones; borra matrículas, notas, actas, carritos y solicitudes y conserva alumnos y cuentas del personal. Para repetirlo, cambia el valor y vuelve a desplegar.
+**Reinicio de pruebas**: `REINICIO_PRUEBAS` en `scripts/seed_database_completa.py` se aplica una sola vez al desplegar. El actual (`2026-10-07`) deja 2026-1 cerrado, **2026-2 en matrícula de alumnos (fase 5)** y **2027-1 en fase 1** sin secciones; borra matrículas, notas, actas, carritos y solicitudes y conserva alumnos y cuentas del personal. Para repetirlo, cambia el valor y vuelve a desplegar.
 
 Los horarios se generan desde los PDF oficiales con `scripts/fuentes/extraer_horarios.py` y quedan en `docs/horarios_2026.json`. Para cargar un horario nuevo: regenera el JSON, sube `CATALOGO_VERSION` en `scripts/seed_database_completa.py` y despliega.
 

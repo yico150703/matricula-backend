@@ -11,7 +11,9 @@ from ..errors import ApiError, entero
 from ..extensions import db
 from ..fechas import hoy
 from ..models import (
+    ActaNotas,
     Alumno,
+    CarritoItem,
     Curso,
     HorarioCab,
     HorarioDCSeccion,
@@ -22,6 +24,7 @@ from ..models import (
     MezclaCurso,
     PeriodoAcademico,
     PlanEstudio,
+    SolicitudPassword,
 )
 from ..security import admin_required, institutional_email, require_self_or_admin
 
@@ -142,6 +145,34 @@ def update_alumno(cod_alumno):
         alumno.estado = estado
     db.session.commit()
     return jsonify(alumno=alumno.to_dict())
+
+
+@bp.delete("/alumnos/<cod_alumno>")
+@admin_required
+def delete_alumno(cod_alumno):
+    """Elimina al alumno con todo su registro: matrículas, notas, cursos seleccionados y solicitudes de contraseña.
+    Sus vacantes quedan libres (la ocupación se calcula con las matrículas)."""
+    import json as _json
+
+    alumno = _get_alumno(cod_alumno)
+    if alumno.cuenta_prueba:
+        raise ApiError("cuenta_prueba", "Es la cuenta de prueba compartida: se vuelve a crear en cada arranque, así que no se elimina.", 409)
+    nombre = f"{alumno.apellidos}, {alumno.nombres}"
+    matriculas = [m.nro_matricula for m in Matricula.query.filter_by(cod_alumno=alumno.cod_alumno).all()]
+    if matriculas:
+        MatriculaDetalle.query.filter(MatriculaDetalle.nro_matricula.in_(matriculas)).delete(synchronize_session=False)
+        Matricula.query.filter(Matricula.nro_matricula.in_(matriculas)).delete(synchronize_session=False)
+    CarritoItem.query.filter_by(cod_alumno=alumno.cod_alumno).delete(synchronize_session=False)
+    SolicitudPassword.query.filter_by(rol="alumno", usuario=alumno.cod_alumno).delete(synchronize_session=False)
+    # Borradores de notas que el docente tenga de este alumno en sus actas
+    for acta in ActaNotas.query.all():
+        notas = _json.loads(acta.notas or "{}")
+        if alumno.cod_alumno in notas:
+            notas.pop(alumno.cod_alumno)
+            acta.notas = _json.dumps(notas)
+    db.session.delete(alumno)
+    db.session.commit()
+    return jsonify(message=f"Alumno {alumno.cod_alumno} ({nombre}) eliminado.")
 
 
 @bp.post("/alumnos/<cod_alumno>/reset-password")
