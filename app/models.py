@@ -517,7 +517,7 @@ class SolicitudPassword(db.Model):
     creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     expira_en = db.Column(db.DateTime, nullable=False)
     estado = db.Column(db.String(12), nullable=False, default="pendiente")  # pendiente | usada | atendida | anulada
-    canal = db.Column(db.String(12), nullable=False, default="oficina")  # correo | oficina
+    canal = db.Column(db.String(12), nullable=False, default="oficina")  # correo | oficina | enlace (generado por la Oficina)
     atendido_en = db.Column(db.DateTime)
 
 
@@ -627,3 +627,29 @@ class ActaNotas(db.Model):
     seccion = relationship("HorarioDCSeccion")
     docente = relationship("Administrador", foreign_keys=[id_docente])
     revisor = relationship("Administrador", foreign_keys=[id_revisor])
+
+
+# 18. BUZÓN DEL ALUMNO (avisos del sistema: seguridad de la cuenta y, más adelante, matrícula, notas, etc.)
+TIPOS_BUZON = {"seguridad": "Seguridad de la cuenta", "matricula": "Matrícula", "notas": "Notas", "aviso": "Aviso"}
+
+
+class MensajeBuzon(db.Model):
+    __tablename__ = "buzon_mensaje"
+    id = db.Column(BIGINT, primary_key=True, autoincrement=True)
+    cod_alumno = db.Column(db.String(20), ForeignKey("alumno.cod_alumno", ondelete="CASCADE"), nullable=False, index=True)
+    tipo = db.Column(db.String(20), nullable=False, default="aviso")
+    titulo = db.Column(db.String(150), nullable=False)
+    cuerpo = db.Column(db.Text, nullable=False)
+    leido = db.Column(db.Boolean, nullable=False, default=False)
+    creado_en = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "tipo": self.tipo,
+            "tipo_nombre": TIPOS_BUZON.get(self.tipo, "Aviso"),
+            "titulo": self.titulo,
+            "cuerpo": self.cuerpo,
+            "leido": self.leido,
+            "creado_en": self.creado_en.isoformat() + "Z",
+        }

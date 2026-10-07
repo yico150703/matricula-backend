@@ -5,6 +5,7 @@ from flask import Blueprint, jsonify, request
 from sqlalchemy import func
 from werkzeug.security import generate_password_hash
 
+from ..buzon import aviso_seguridad
 from ..calendario import fechas_para
 from ..errors import ApiError
 from ..extensions import db
@@ -107,13 +108,22 @@ def atender_solicitud(id_solicitud):
 
         solicitud.estado = "atendida"
         solicitud.atendido_en = datetime.utcnow()
-        _, token = crear_solicitud(persona, solicitud.rol, "oficina")
+        # El nuevo enlace no es otra solicitud para la Oficina: se marca como "enlace" para que no vuelva a la lista de pendientes
+        _, token = crear_solicitud(persona, solicitud.rol, "enlace")
+        if solicitud.rol == "alumno":
+            aviso_seguridad(persona.cod_alumno, "La Oficina atendió tu solicitud", "La Oficina de Matrícula generó un enlace para que crees una nueva contraseña.")
         db.session.commit()
         return jsonify(message="Enlace generado. Compártelo solo con la persona que lo solicitó.", enlace=enlace_restablecer(token))
     persona.password_hash = generate_password_hash(clave_inicial)
     persona.debe_cambiar_password = True
     solicitud.estado = "atendida"
     solicitud.atendido_en = datetime.utcnow()
+    if solicitud.rol == "alumno":
+        aviso_seguridad(
+            persona.cod_alumno,
+            "La Oficina restableció tu contraseña",
+            "Atendiendo tu solicitud, la Oficina de Matrícula restableció tu contraseña a tu código de alumno para que puedas volver a ingresar.",
+        )
     db.session.commit()
     return jsonify(message=f"Contraseña de {solicitud.usuario} restablecida a '{clave_inicial}'. Deberá cambiarla al ingresar.")
 

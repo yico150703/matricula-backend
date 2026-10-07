@@ -6,6 +6,7 @@ from flask_jwt_extended import jwt_required
 from sqlalchemy import or_
 from werkzeug.security import generate_password_hash
 
+from ..buzon import aviso_seguridad
 from ..academico import calcular_notas, ciclo_actual, course_sets, notas_detalle, ocupacion, prerequisitos, purgar_carritos_vencidos, redondear
 from ..errors import ApiError, entero
 from ..extensions import db
@@ -21,6 +22,7 @@ from ..models import (
     HorarioDet,
     Matricula,
     MatriculaDetalle,
+    MensajeBuzon,
     MezclaCurso,
     PeriodoAcademico,
     PlanEstudio,
@@ -164,6 +166,7 @@ def delete_alumno(cod_alumno):
         Matricula.query.filter(Matricula.nro_matricula.in_(matriculas)).delete(synchronize_session=False)
     CarritoItem.query.filter_by(cod_alumno=alumno.cod_alumno).delete(synchronize_session=False)
     SolicitudPassword.query.filter_by(rol="alumno", usuario=alumno.cod_alumno).delete(synchronize_session=False)
+    MensajeBuzon.query.filter_by(cod_alumno=alumno.cod_alumno).delete(synchronize_session=False)
     # Borradores de notas que el docente tenga de este alumno en sus actas
     for acta in ActaNotas.query.all():
         notas = _json.loads(acta.notas or "{}")
@@ -182,6 +185,11 @@ def reset_password(cod_alumno):
     alumno = _get_alumno(cod_alumno)
     alumno.password_hash = generate_password_hash(alumno.cod_alumno)
     alumno.debe_cambiar_password = True
+    aviso_seguridad(
+        alumno.cod_alumno,
+        "La Oficina restableció tu contraseña",
+        "La Oficina de Matrícula restableció tu contraseña a tu código de alumno para que puedas volver a ingresar.",
+    )
     db.session.commit()
     return jsonify(
         message=f"Contraseña restablecida. El alumno ingresará con su código ({alumno.cod_alumno}) y deberá cambiarla.",

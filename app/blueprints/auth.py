@@ -7,6 +7,7 @@ from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from ..buzon import aviso_seguridad
 from ..errors import ApiError
 from ..extensions import db
 from ..mailer import mail_configured, send_mail
@@ -99,8 +100,15 @@ def change_password():
     if rol == "alumno":
         forbidden.add(user.cod_alumno)
     validate_new_password(nueva, forbidden=forbidden)
+    inicial = user.debe_cambiar_password
     user.password_hash = generate_password_hash(nueva)
     user.debe_cambiar_password = False
+    if rol == "alumno":
+        aviso_seguridad(
+            user.cod_alumno,
+            "Creaste tu contraseña" if inicial else "Cambiaste tu contraseña",
+            "Tu cuenta ya tiene una contraseña personal: desde ahora ingresa con ella." if inicial else "La contraseña de tu cuenta se cambió desde Configuración.",
+        )
     db.session.commit()
     return jsonify(message="Contraseña actualizada correctamente.", usuario=user.to_dict(), rol=rol)
 
@@ -216,6 +224,13 @@ def solicitar_recuperacion():
     destinos = [e for e in {getattr(user, "email", None), getattr(user, "email_personal", None)} if e]
     canal = "correo" if (mail_configured() and destinos) else "oficina"
     solicitud, token = crear_solicitud(user, rol, canal)
+    if rol == "alumno":
+        aviso_seguridad(
+            user.cod_alumno,
+            "Se solicitó recuperar tu contraseña",
+            "Alguien pidió recuperar la contraseña de tu cuenta desde «¿Olvidaste tu contraseña?». "
+            + ("Se envió un enlace a tu correo." if canal == "correo" else "La solicitud pasó a la Oficina de Matrícula."),
+        )
     db.session.commit()
 
     if canal == "correo":
@@ -263,5 +278,7 @@ def restablecer():
     user.debe_cambiar_password = False
     solicitud.estado = "usada"
     solicitud.atendido_en = datetime.utcnow()
+    if solicitud.rol == "alumno":
+        aviso_seguridad(user.cod_alumno, "Recuperaste tu contraseña", "Creaste una nueva contraseña con el enlace de recuperación.")
     db.session.commit()
     return jsonify(message="Tu contraseña fue actualizada. Ya puedes iniciar sesión.")
